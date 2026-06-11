@@ -1,0 +1,301 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Entities\\ApiKeyEntity\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Entities/ApiKeyEntity.php
+
+		-
+			message: '#^Method App\\Filters\\ThrottleFilter\:\:after\(\) has parameter \$arguments with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Filters/ThrottleFilter.php
+
+		-
+			message: '#^Method App\\Filters\\ThrottleFilter\:\:before\(\) has parameter \$arguments with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Filters/ThrottleFilter.php
+
+		-
+			message: '#^Method App\\Libraries\\Files\\Base64Processor\:\:process\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Libraries/Files/Base64Processor.php
+
+		-
+			message: '#^Method App\\Libraries\\Files\\FileProcessorInterface\:\:process\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Libraries/Files/FileProcessorInterface.php
+
+		-
+			message: '#^Method App\\Libraries\\Files\\MultipartProcessor\:\:process\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Libraries/Files/MultipartProcessor.php
+
+		-
+			message: '#^Method App\\Libraries\\Files\\MultipartProcessor\:\:validate\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Libraries/Files/MultipartProcessor.php
+
+		-
+			message: '#^Method App\\Models\\AuditLogModel\:\:getByEntity\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/AuditLogModel.php
+
+		-
+			message: '#^Method App\\Models\\AuditLogModel\:\:getByUser\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/AuditLogModel.php
+
+		-
+			message: '#^Method App\\Models\\AuditLogModel\:\:getRecent\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/AuditLogModel.php
+
+		-
+			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Models/AuditLogModel.php
+
+		-
+			message: '#^Method App\\Services\\Auth\\Support\\GoogleAuthHandler\:\:createPendingUser\(\) has parameter \$identity with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Auth/Support/GoogleAuthHandler.php
+
+		-
+			message: '#^Method App\\Services\\Auth\\Support\\GoogleAuthHandler\:\:reactivateDeletedUser\(\) has parameter \$identity with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Auth/Support/GoogleAuthHandler.php
+
+		-
+			message: '#^Method App\\Services\\Auth\\Support\\GoogleAuthHandler\:\:syncProfileIfEmpty\(\) has parameter \$identity with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Auth/Support/GoogleAuthHandler.php
+
+		-
+			message: '#^Method createPendingUser\(\) in DTO\-First Service has array type\-hint for \$identity\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Auth/Support/GoogleAuthHandler.php
+
+		-
+			message: '#^Method reactivateDeletedUser\(\) in DTO\-First Service has array type\-hint for \$identity\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Auth/Support/GoogleAuthHandler.php
+
+		-
+			message: '#^Method syncProfileIfEmpty\(\) in DTO\-First Service has array type\-hint for \$identity\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Auth/Support/GoogleAuthHandler.php
+
+		-
+			message: '#^Parameter \#1 \$datetime of function strtotime expects string, string\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Auth/VerificationService.php
+
+		-
+			message: '#^Parameter \#2 \$timestamp of function date expects int\|null, int\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Auth/VerificationService.php
+
+		-
+			message: '#^Method listFor\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Core/GalleryService.php
+
+		-
+			message: '#^Method reorder\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Core/GalleryService.php
+
+		-
+			message: '#^Method App\\Services\\Files\\FileService\:\:resolveUserId\(\) has parameter \$request with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method bulkDestroy\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method bulkDestroy\(\) in DTO\-First Service has array type\-hint for \$ids\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method bulkForceDestroy\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method bulkForceDestroy\(\) in DTO\-First Service has array type\-hint for \$ids\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method bulkRestore\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method bulkRestore\(\) in DTO\-First Service has array type\-hint for \$ids\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method getUsages\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method regenerateVariants\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Files/FileService.php
+
+		-
+			message: '#^Method resolve\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Iam/ApplicationPermissionsResolver.php
+
+		-
+			message: '#^Method listAssignable\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Iam/AssignableRolesService.php
+
+		-
+			message: '#^Method listAssignable\(\) in DTO\-First Service has array type\-hint for \$actorPermissions\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Iam/AssignableRolesService.php
+
+		-
+			message: '#^Method resolve\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Iam/EffectivePermissionsResolver.php
+
+		-
+			message: '#^Method getPermissionIds\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Iam/RolePermissionAssignmentService.php
+
+		-
+			message: '#^Method attachPermissions\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Iam/RoleService.php
+
+		-
+			message: '#^Method listPermissions\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Iam/RoleService.php
+
+		-
+			message: '#^Method getUserRoles\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Iam/UserRoleAssignmentService.php
+
+		-
+			message: '#^Method syncRoles\(\) in DTO\-First Service has array type\-hint for \$roleIds\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Iam/UserRoleAssignmentService.php
+
+		-
+			message: '#^Method queueTemplate\(\) in DTO\-First Service has array type\-hint for \$data\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/System/EmailService.php
+
+		-
+			message: '#^Method sendTemplate\(\) in DTO\-First Service has array type\-hint for \$data\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/System/EmailService.php
+
+		-
+			message: '#^Method App\\Services\\System\\SecurityAuditLogger\:\:safeLog\(\) has parameter \$newValues with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/System/SecurityAuditLogger.php
+
+		-
+			message: '#^Method App\\Services\\System\\SecurityAuditLogger\:\:safeLog\(\) has parameter \$oldValues with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/System/SecurityAuditLogger.php
+
+		-
+			message: '#^Method logAuthorizationDeniedFromContext\(\) in DTO\-First Service has array type\-hint for \$details\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/System/SecurityAuditLogger.php
+
+		-
+			message: '#^Method App\\Services\\Tokens\\Actions\\CreateApiKeyAction\:\:execute\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tokens/Actions/CreateApiKeyAction.php
+
+		-
+			message: '#^Method execute\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Tokens/Actions/CreateApiKeyAction.php
+
+		-
+			message: '#^Method encode\(\) in DTO\-First Service has array type\-hint for \$permissions\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Tokens/JwtService.php
+
+		-
+			message: '#^Method encodeServiceToken\(\) in DTO\-First Service has array type\-hint for \$permissions\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayParameter
+			count: 1
+			path: app/Services/Tokens/JwtService.php
+
+		-
+			message: '#^Method getPermissions\(\) in DTO\-First Service has array return type\-hint\. Use a DTO or specific object class instead\.$#'
+			identifier: dtoFirst.arrayReturn
+			count: 1
+			path: app/Services/Tokens/JwtService.php
+
+		-
+			message: '#^Method App\\Services\\Users\\Actions\\UpdateUserAction\:\:buildUpdateData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Users/Actions/UpdateUserAction.php

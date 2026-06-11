@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Config;
+
+trait FileDomainServices
+{
+    public static function fileService(bool $getShared = true): \App\Interfaces\Files\FileServiceInterface
+    {
+        if ($getShared) {
+            return static::getSharedInstance('fileService');
+        }
+
+        $storage = static::storageManager();
+        $apiConfig = config('Api');
+
+        return new \App\Services\Files\FileService(
+            static::fileRepository(),
+            static::fileResponseMapper(),
+            $storage,
+            static::auditService(),
+            new \App\Libraries\Files\FilenameGenerator($storage),
+            new \App\Libraries\Files\MultipartProcessor(),
+            new \App\Libraries\Files\Base64Processor(),
+            new \App\Libraries\Files\ImageVariantProcessor(),
+            static::fileReferenceRepository(),
+            static::virusScannerService(),
+            $apiConfig->filesUserScoped
+        );
+    }
+
+    public static function fileResponseMapper(bool $getShared = true): \dcardenasl\Ci4ApiCore\Mappers\ResponseMapperInterface
+    {
+        if ($getShared) {
+            return static::getSharedInstance('fileResponseMapper');
+        }
+
+        return new \dcardenasl\Ci4ApiCore\Mappers\DtoResponseMapper(
+            \App\DTO\Response\Files\FileResponseDTO::class
+        );
+    }
+
+    public static function virusScannerService(bool $getShared = true): \App\Interfaces\Files\VirusScannerServiceInterface
+    {
+        if ($getShared) {
+            return static::getSharedInstance('virusScannerService');
+        }
+
+        return new \App\Services\Files\ClamAvScannerService(
+            static::logger(),
+            (bool) env('FILES_VIRUS_SCAN_ENABLED', false),
+            (string) env('FILES_CLAMAV_ADDRESS', 'tcp://127.0.0.1:3310')
+        );
+    }
+
+    public static function storageManager(bool $getShared = true): \App\Libraries\Storage\StorageManager
+    {
+        if ($getShared) {
+            return static::getSharedInstance('storageManager');
+        }
+
+        return new \App\Libraries\Storage\StorageManager();
+    }
+}
