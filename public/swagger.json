@@ -1,7 +1,7 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "CodeIgniter 4 API Starter",
+        "title": "ci4-website-builder Hub",
         "description": "RESTful API built with CodeIgniter 4, featuring JWT authentication, standardized responses, and comprehensive documentation.",
         "version": "2.2.2"
     },

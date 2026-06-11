@@ -99,8 +99,8 @@ DB_HOST="127.0.0.1"
 DB_PORT="3306"
 DB_USER="root"
 DB_PASS=""
-DB_NAME="ci4_api"
-TEST_DB_NAME="ci4_api_test"
+DB_NAME="ci4_website_builder"
+TEST_DB_NAME="ci4_website_builder_test"
 
 # Use detected Docker port as default if available
 [ -n "$DETECTED_DOCKER_PORT" ] && DB_PORT="$DETECTED_DOCKER_PORT"
