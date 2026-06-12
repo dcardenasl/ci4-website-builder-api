@@ -68,6 +68,10 @@ class EffectivePermissionsResolver implements PermissionResolverInterface
      */
     private function load(int $userId, int $applicationId): array
     {
+        if ($this->userIsSuperadmin($userId)) {
+            return $this->loadAllApplicationCodes($applicationId);
+        }
+
         $query = $this->db->table('user_roles ur')
             ->select('p.code')
             ->distinct()
@@ -87,6 +91,35 @@ class EffectivePermissionsResolver implements PermissionResolverInterface
         $codes = array_map(static fn (array $row) => (string) $row['code'], $rows);
 
         return array_values(array_unique($codes));
+    }
+
+    private function userIsSuperadmin(int $userId): bool
+    {
+        return $this->db->table('user_roles ur')
+            ->join('roles r', 'r.id = ur.role_id')
+            ->where('ur.user_id', $userId)
+            ->where('r.code', 'superadmin')
+            ->countAllResults() > 0;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function loadAllApplicationCodes(int $applicationId): array
+    {
+        $query = $this->db->table('permissions')
+            ->select('code')
+            ->where('application_id', $applicationId)
+            ->orderBy('code', 'ASC')
+            ->get();
+
+        if ($query === false) {
+            return [];
+        }
+
+        $rows = $query->getResultArray();
+
+        return array_values(array_unique(array_map(static fn (array $row): string => (string) $row['code'], $rows)));
     }
 
     private static function cacheKey(int $userId, int $applicationId): string
