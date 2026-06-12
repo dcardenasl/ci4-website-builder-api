@@ -165,4 +165,13 @@ trait IamDomainServices
             \Config\Database::connect()
         );
     }
+
+    public static function rolePermissionMatrixService(bool $getShared = true): \App\Services\Iam\RolePermissionMatrixService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('rolePermissionMatrixService');
+        }
+
+        return new \App\Services\Iam\RolePermissionMatrixService(\Config\Database::connect());
+    }
 }
