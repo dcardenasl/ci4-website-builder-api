@@ -4940,6 +4940,7 @@
                 },
                 "type": "object"
             },
+            "RolePermissionMatrixResponse": {},
             "RoleResponse": {
                 "title": "Role Response",
                 "required": [
