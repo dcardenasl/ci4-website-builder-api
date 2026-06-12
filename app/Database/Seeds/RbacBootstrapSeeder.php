@@ -170,8 +170,24 @@ class RbacBootstrapSeeder extends Seeder
 
             $map[$roleDef['code']] = $roleId;
 
-            $codes = $roleDef['permissions'] === '*' ? array_keys($permissionIds) : $roleDef['permissions'];
-            $this->syncRolePermissions($roleId, array_map(static fn (string $c) => $permissionIds[$c], $codes));
+            $rolePermissionIds = $roleDef['permissions'] === '*'
+                ? array_values($this->allPermissionIds())
+                : array_map(static fn (string $c) => $permissionIds[$c], $roleDef['permissions']);
+            $this->syncRolePermissions($roleId, $rolePermissionIds);
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function allPermissionIds(): array
+    {
+        $rows = $this->db->table('permissions')->select('code, id')->get()->getResultArray();
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(string) $row['code']] = (int) $row['id'];
         }
 
         return $map;

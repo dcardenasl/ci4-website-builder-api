@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Commands;
 
+use App\Libraries\Iam\SuperadminPermissionAttacher;
 use App\Services\Tokens\Support\ApiKeyMaterialService;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
@@ -53,6 +54,7 @@ class BootstrapApplication extends BaseCommand
         CLI::write("✓ Application '{$code}' (id={$appId}) ready.", 'green');
 
         $permId = $this->ensurePermission($db, $appId, $code, $now);
+        (new SuperadminPermissionAttacher($db))->attach([$permId]);
         CLI::write("✓ Permission '{$code}.access' (id={$permId}) ready.", 'green');
 
         $shouldGrant = ! $skipGrant && CLI::prompt(

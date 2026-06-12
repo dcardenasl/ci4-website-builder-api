@@ -6,6 +6,8 @@ namespace App\Libraries\Iam;
 
 use App\Models\ApplicationModel;
 use App\Models\PermissionModel;
+use CodeIgniter\Entity\Entity;
+use Config\Services;
 
 /**
  * Allows a domain app (authenticated via X-App-Key) to register its own
@@ -37,6 +39,7 @@ class SelfPermissionService
         $namespace = $application->code . '.';
         $created   = 0;
         $existing  = 0;
+        $permissionIds = [];
         $rejected  = 0;
         $errors    = [];
 
@@ -56,6 +59,7 @@ class SelfPermissionService
 
             if ($existingRow !== null) {
                 $existing++;
+                $permissionIds[] = $this->permissionId($existingRow);
                 continue;
             }
 
@@ -72,9 +76,30 @@ class SelfPermissionService
                 $errors[] = "Failed to insert '{$code}': " . implode(', ', $this->permissionModel->errors());
             } else {
                 $created++;
+                $permissionIds[] = (int) $inserted;
             }
         }
 
+        (new SuperadminPermissionAttacher())->attach($permissionIds);
+        Services::effectivePermissionsResolver()->invalidateAll();
+        Services::applicationPermissionsResolver()->invalidate($appId);
+
         return new SelfPermissionResult($created, $existing, $rejected, $errors);
+    }
+
+    /**
+     * @param array<mixed>|object $row
+     */
+    private function permissionId(array|object $row): int
+    {
+        if (is_array($row)) {
+            return (int) ($row['id'] ?? 0);
+        }
+
+        if ($row instanceof Entity) {
+            return (int) ($row->toRawArray()['id'] ?? 0);
+        }
+
+        return (int) ($row->id ?? 0);
     }
 }
