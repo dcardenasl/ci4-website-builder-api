@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "10bd01b59974249c9a21add93c229519",
+    "content-hash": "3d6ce939b1ec05b05654ece749a74827",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -236,16 +236,16 @@
         },
         {
             "name": "dcardenasl/ci4-api-core",
-            "version": "v1.0.0",
+            "version": "v1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dcardenasl/ci4-api-core.git",
-                "reference": "514a948522aa2eb61640c97506011301ba5905a0"
+                "reference": "a2d1c56b8b77e09ccaa3cb2cd132c99fcbf893ee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dcardenasl/ci4-api-core/zipball/514a948522aa2eb61640c97506011301ba5905a0",
-                "reference": "514a948522aa2eb61640c97506011301ba5905a0",
+                "url": "https://api.github.com/repos/dcardenasl/ci4-api-core/zipball/a2d1c56b8b77e09ccaa3cb2cd132c99fcbf893ee",
+                "reference": "a2d1c56b8b77e09ccaa3cb2cd132c99fcbf893ee",
                 "shasum": ""
             },
             "require": {
@@ -321,7 +321,7 @@
                 "issues": "https://github.com/dcardenasl/ci4-api-core/issues",
                 "source": "https://github.com/dcardenasl/ci4-api-core"
             },
-            "time": "2026-06-04T08:12:21+00:00"
+            "time": "2026-06-11T03:18:18+00:00"
         },
         {
             "name": "doctrine/lexer",
