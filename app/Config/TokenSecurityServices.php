@@ -15,7 +15,14 @@ trait TokenSecurityServices
         $apiConfig = config('Api');
         $secretKey = $apiConfig->jwtSecretKey;
         $ttl = $apiConfig->jwtAccessTokenTtl;
-        $issuer = (string) env('app.baseURL', 'http://localhost:8080');
+        $issuer = (string) env('app.baseURL', '');
+        if (! $issuer) {
+            throw new \LogicException(
+                'Missing app.baseURL in .env. '
+                . 'This is used as the JWT token issuer claim. '
+                . 'Example: app.baseURL=http://localhost:8080'
+            );
+        }
 
         return new \App\Services\Tokens\JwtService(
             $secretKey,
