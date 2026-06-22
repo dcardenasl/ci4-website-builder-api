@@ -93,6 +93,9 @@ class UpdateUserAction
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function buildUpdateData(UserUpdateRequestDTO $request): array
     {
         $data = [];

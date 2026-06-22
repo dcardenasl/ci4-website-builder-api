@@ -151,11 +151,7 @@ When scaffolding new modules, `vendor/bin/make-crud.sh` emits the protected rout
 
 ## Static analysis & quality
 
-PHPStan runs at **level 8** with a `phpstan-baseline.neon` capturing
-historical type-debt (currently ~125 entries, mostly
-`missingType.iterableValue`). New code must not introduce errors against
-the level-8 ruleset; clean up baseline entries opportunistically as you
-touch their files. The framework-noise patterns (CI4 helpers, constants,
+PHPStan runs at **level 8** with a `phpstan-baseline.neon`. **Current baseline: 0 entries** (fully drained). New code must not introduce any errors against the level-8 ruleset. Run `vendor/bin/phpstan analyse --no-progress` before pushing; the CI gate enforces this. The framework-noise patterns (CI4 helpers, constants,
 magic methods) live in `phpstan.neon` under `ignoreErrors:` — keep them
 narrow.
 

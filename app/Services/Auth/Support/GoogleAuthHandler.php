@@ -28,8 +28,10 @@ class GoogleAuthHandler
 
     /**
      * Create a new user in pending state from Google identity
+     *
+     * @param array<string, mixed> $identity
      */
-    public function createPendingUser(array $identity): \App\Entities\UserEntity
+    public function createPendingUser($identity): \App\Entities\UserEntity
     {
         $requiresVerification = Hasher::isEmailVerificationRequired();
         $status = $requiresVerification ? 'pending_approval' : 'active';
@@ -62,8 +64,10 @@ class GoogleAuthHandler
 
     /**
      * Reactivate a soft-deleted user coming from Google
+     *
+     * @param array<string, mixed> $identity
      */
-    public function reactivateDeletedUser(object $user, array $identity): \App\Entities\UserEntity
+    public function reactivateDeletedUser(object $user, $identity): \App\Entities\UserEntity
     {
         return $this->wrapInTransaction(function () use ($user, $identity) {
             $requiresVerification = Hasher::isEmailVerificationRequired();
@@ -102,8 +106,10 @@ class GoogleAuthHandler
 
     /**
      * Synchronize profile data if the database record has empty fields
+     *
+     * @param array<string, mixed> $identity
      */
-    public function syncProfileIfEmpty(int $userId, array $identity): void
+    public function syncProfileIfEmpty(int $userId, $identity): void
     {
         $currentUser = $this->userRepository->find($userId);
         if (!$currentUser) {

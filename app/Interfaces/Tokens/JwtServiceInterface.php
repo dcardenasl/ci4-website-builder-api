@@ -16,7 +16,7 @@ interface JwtServiceInterface
      *
      * @param list<string> $permissions Effective permission codes; encoded as the `scope` claim.
      */
-    public function encode(int $userId, array $permissions = []): string;
+    public function encode(int $userId, $permissions = []): string;
 
     /**
      * Generate a service (machine-to-machine) JWT.
@@ -30,7 +30,8 @@ interface JwtServiceInterface
      * @param list<string> $permissions Effective permission codes for the application
      * @param int          $ttl         Token lifetime in seconds
      */
-    public function encodeServiceToken(string $sub, array $permissions, int $ttl): string;
+    /** @param list<string> $permissions */
+    public function encodeServiceToken(string $sub, $permissions, int $ttl): string;
 
     /**
      * Decode and validate a JWT token
@@ -61,5 +62,5 @@ interface JwtServiceInterface
      *
      * @return list<string>
      */
-    public function getPermissions(string $token): array;
+    public function getPermissions(string $token);
 }

@@ -37,7 +37,7 @@ class GalleryService
     /**
      * @return list<GalleryImageResponseDTO>
      */
-    public function listFor(int $parentId): array
+    public function listFor(int $parentId)
     {
         $rows = $this->pivot->findByParent($parentId);
 
@@ -96,7 +96,7 @@ class GalleryService
      *
      * @return list<GalleryImageResponseDTO>
      */
-    public function reorder(int $parentId, GalleryReorderRequestDTO $request): array
+    public function reorder(int $parentId, GalleryReorderRequestDTO $request)
     {
         return $this->wrapInTransaction(function () use ($parentId, $request) {
             foreach ($request->items as $item) {

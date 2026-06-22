@@ -46,7 +46,7 @@ class ApiKeyEntity extends Entity
      * @param bool $onlyChanged Return only changed fields
      * @param bool $cast        Apply casting
      * @param bool $recursive   Recursively convert nested entities
-     * @return array
+     * @return array<string, mixed>
      */
     public function toArray(bool $onlyChanged = false, bool $cast = true, bool $recursive = false): array
     {

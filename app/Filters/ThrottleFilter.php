@@ -33,7 +33,7 @@ class ThrottleFilter implements FilterInterface
      * | Invalid/inactive key   | 401 Unauthorized      | —                       |
      *
      * @param RequestInterface $request
-     * @param array|null $arguments
+     * @param array<int|string, mixed>|null $arguments
      * @return RequestInterface|ResponseInterface|null
      */
     public function before(RequestInterface $request, $arguments = null)
@@ -137,7 +137,7 @@ class ThrottleFilter implements FilterInterface
      *
      * @param RequestInterface  $request
      * @param ResponseInterface $response
-     * @param array|null        $arguments
+     * @param array<int|string, mixed>|null $arguments
      * @return ResponseInterface
      */
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)

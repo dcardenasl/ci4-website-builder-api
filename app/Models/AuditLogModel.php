@@ -78,7 +78,7 @@ class AuditLogModel extends Model
      *
      * @param string $entityType Entity type (e.g., 'user', 'file')
      * @param int $entityId Entity ID
-     * @return array
+     * @return array<int, mixed>
      */
     public function getByEntity(string $entityType, int $entityId): array
     {
@@ -93,7 +93,7 @@ class AuditLogModel extends Model
      *
      * @param int $userId
      * @param int $limit
-     * @return array
+     * @return array<int, mixed>
      */
     public function getByUser(int $userId, int $limit = 50): array
     {
@@ -106,7 +106,7 @@ class AuditLogModel extends Model
      * Get recent audit logs
      *
      * @param int $limit
-     * @return array
+     * @return array<int, mixed>
      */
     public function getRecent(int $limit = 100): array
     {
@@ -119,7 +119,8 @@ class AuditLogModel extends Model
      */
     public function getActionFacets(int $windowDays = 90, int $limit = 100): array
     {
-        $since = date('Y-m-d H:i:s', strtotime('-' . max(1, $windowDays) . ' days'));
+        $ts    = strtotime('-' . max(1, $windowDays) . ' days');
+        $since = date('Y-m-d H:i:s', $ts !== false ? $ts : time());
         $query = $this->builder()
             ->select('action AS value, COUNT(*) AS count')
             ->where('created_at >=', $since)
@@ -144,7 +145,8 @@ class AuditLogModel extends Model
      */
     public function getEntityTypeFacets(int $windowDays = 90, int $limit = 100): array
     {
-        $since = date('Y-m-d H:i:s', strtotime('-' . max(1, $windowDays) . ' days'));
+        $ts    = strtotime('-' . max(1, $windowDays) . ' days');
+        $since = date('Y-m-d H:i:s', $ts !== false ? $ts : time());
         $query = $this->builder()
             ->select('entity_type AS value, COUNT(*) AS count')
             ->where('created_at >=', $since)

@@ -11,6 +11,9 @@ use dcardenasl\Ci4ApiCore\Exceptions\ValidationException;
 
 class MultipartProcessor implements FileProcessorInterface
 {
+    /**
+     * @param array<string, mixed> $options
+     */
     public function process(mixed $input, array $options = []): ProcessedFile
     {
         if (!$input instanceof UploadedFile) {
@@ -37,6 +40,9 @@ class MultipartProcessor implements FileProcessorInterface
         );
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     private function validate(UploadedFile $file, array $options): void
     {
         $apiConfig = config('Api');

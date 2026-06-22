@@ -131,7 +131,7 @@ class RoleService extends BaseCrudService implements RoleServiceInterface
      *
      * @return PermissionResponseDTO[]
      */
-    public function listPermissions(int $roleId, ?SecurityContext $context = null): array
+    public function listPermissions(int $roleId, ?SecurityContext $context = null)
     {
         $this->ensureRoleExists($roleId);
 
@@ -155,7 +155,7 @@ class RoleService extends BaseCrudService implements RoleServiceInterface
      *
      * @return PermissionResponseDTO[] full list of attached permissions after the operation
      */
-    public function attachPermissions(int $roleId, AttachPermissionsRequestDTO $request, ?SecurityContext $context = null): array
+    public function attachPermissions(int $roleId, AttachPermissionsRequestDTO $request, ?SecurityContext $context = null)
     {
         return $this->wrapInTransaction(function () use ($roleId, $request, $context) {
             $this->ensureRoleExists($roleId);

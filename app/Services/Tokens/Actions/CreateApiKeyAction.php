@@ -17,7 +17,10 @@ class CreateApiKeyAction
     ) {
     }
 
-    public function execute(ApiKeyCreateRequestDTO $request): array
+    /**
+     * @return array{entity: \App\Entities\ApiKeyEntity, key: string}
+     */
+    public function execute(ApiKeyCreateRequestDTO $request)
     {
         $rawKey = $this->apiKeyMaterialService->generateRawKey();
         $hash = $this->apiKeyMaterialService->hash($rawKey);

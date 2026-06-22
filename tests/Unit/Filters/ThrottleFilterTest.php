@@ -73,7 +73,10 @@ class ThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeAllowsRequestsWithinLimit(): void
     {
-        $request = $this->createMockRequest('192.168.1.1');
+        $request   = $this->createMockRequest('192.168.1.1');
+        $apiConfig = config('Api');
+        $limit     = $apiConfig->rateLimitRequests;
+        $window    = $apiConfig->rateLimitWindow;
 
         // Simulate first request (cache returns null)
         $this->mockCache->expects($this->once())
@@ -85,17 +88,17 @@ class ThrottleFilterTest extends CIUnitTestCase
             ->with(
                 $this->stringContains('rate_limit_'),
                 1,
-                60
+                $window
             )
             ->willReturn(true);
 
-        // Expect setRateLimitInfo to be called
+        // Expect setRateLimitInfo to be called with correct limit and remaining
         $request->expects($this->once())
             ->method('setRateLimitInfo')
-            ->with($this->callback(function ($info) {
+            ->with($this->callback(function ($info) use ($limit) {
                 return isset($info['limit'], $info['remaining'], $info['reset'])
-                    && $info['limit'] === 60
-                    && $info['remaining'] === 59;
+                    && $info['limit'] === $limit
+                    && $info['remaining'] === $limit - 1;
             }));
 
         $result = $this->filter->before($request);
@@ -106,11 +109,12 @@ class ThrottleFilterTest extends CIUnitTestCase
     public function testBeforeBlocksRequestsExceedingLimit(): void
     {
         $request = $this->createMockRequest('192.168.1.1');
+        $limit   = config('Api')->rateLimitRequests;
 
-        // Simulate exceeded limit (60 requests already made)
+        // Simulate exceeded limit (counter at or above limit)
         $this->mockCache->expects($this->once())
             ->method('get')
-            ->willReturn(60);
+            ->willReturn($limit);
 
         $this->mockCache->expects($this->never())
             ->method('save');
@@ -124,9 +128,10 @@ class ThrottleFilterTest extends CIUnitTestCase
     public function testBeforeReturns429WhenThrottled(): void
     {
         $request = $this->createMockRequest('192.168.1.1');
+        $limit   = config('Api')->rateLimitRequests;
 
         $this->mockCache->method('get')
-            ->willReturn(60); // Limit reached
+            ->willReturn($limit); // Limit reached
 
         $result = $this->filter->before($request);
 
@@ -190,8 +195,9 @@ class ThrottleFilterTest extends CIUnitTestCase
     public function testBeforeIncrementsRequestCount(): void
     {
         $request = $this->createMockRequest('192.168.1.1');
+        $limit   = config('Api')->rateLimitRequests;
 
-        // Simulate 5th request (counter already exists in cache)
+        // Simulate 5th request (counter already exists in cache at 4)
         $this->mockCache->expects($this->once())
             ->method('get')
             ->willReturn(4);
@@ -207,8 +213,8 @@ class ThrottleFilterTest extends CIUnitTestCase
 
         $request->expects($this->once())
             ->method('setRateLimitInfo')
-            ->with($this->callback(function ($info) {
-                return $info['remaining'] === 55; // 60 - 5 = 55
+            ->with($this->callback(function ($info) use ($limit) {
+                return $info['remaining'] === $limit - 5; // limit - (counter+1)
             }));
 
         $this->filter->before($request);
@@ -219,8 +225,9 @@ class ThrottleFilterTest extends CIUnitTestCase
     public function testSubsequentRequestsUseIncrementNotSave(): void
     {
         $request = $this->createMockRequest('192.168.1.1');
+        $limit   = config('Api')->rateLimitRequests;
 
-        // Simulate a mid-window request (counter already exists)
+        // Simulate a mid-window request (counter already exists at 10)
         $this->mockCache->expects($this->once())
             ->method('get')
             ->willReturn(10);
@@ -235,7 +242,7 @@ class ThrottleFilterTest extends CIUnitTestCase
 
         $request->expects($this->once())
             ->method('setRateLimitInfo')
-            ->with($this->callback(fn ($info) => $info['remaining'] === 49)); // 60 - 11
+            ->with($this->callback(fn ($info) => $info['remaining'] === $limit - 11)); // limit - (counter+1)
 
         $result = $this->filter->before($request);
         $this->assertInstanceOf(ApiRequest::class, $result);

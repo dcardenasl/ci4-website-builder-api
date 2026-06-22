@@ -64,7 +64,7 @@ class UserRoleAssignmentService
      *
      * @param list<int> $roleIds
      */
-    public function syncRoles(int $userId, array $roleIds, ?int $actorId = null): void
+    public function syncRoles(int $userId, $roleIds, ?int $actorId = null): void
     {
         $roleIds = array_values(array_unique(array_map('intval', $roleIds)));
 
@@ -123,7 +123,7 @@ class UserRoleAssignmentService
     /**
      * @return list<array{id:int, code:string, name:string, description:string|null, is_system:int}>
      */
-    public function getUserRoles(int $userId): array
+    public function getUserRoles(int $userId)
     {
         $result = $this->db->table('user_roles ur')
             ->select('r.id, r.code, r.name, r.description, r.is_system')

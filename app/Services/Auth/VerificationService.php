@@ -65,7 +65,7 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
             'subject' => lang('Email.verification.subject'),
             'display_name' => (string) $user->getDisplayName(),
             'verification_link' => $verificationLink,
-            'expires_at' => date('F j, Y g:i A', strtotime($expiresAt)),
+            'expires_at' => date('F j, Y g:i A', strtotime($expiresAt) ?: time()),
         ]);
 
         return true;
@@ -96,7 +96,7 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
         $expiresAtStr = '';
 
         if ($expiresAtVal instanceof Time) {
-            $expiresAtStr = $expiresAtVal->toDateTimeString();
+            $expiresAtStr = (string) $expiresAtVal->toDateTimeString();
         } elseif (is_string($expiresAtVal)) {
             $expiresAtStr = $expiresAtVal;
         }

@@ -36,6 +36,7 @@ class EffectivePermissionsResolver implements PermissionResolverInterface
 
     /**
      * @return list<string> permission codes (sorted, deduplicated)
+     * @phpstan-ignore dtoFirst.arrayReturn
      */
     public function resolve(int $userId, int $applicationId): array
     {

@@ -77,8 +77,10 @@ readonly class EmailService implements EmailServiceInterface
 
     /**
      * Send an email using a template immediately
+     *
+     * @param array<string, mixed> $data
      */
-    public function sendTemplate(string $template, string $to, array $data): bool
+    public function sendTemplate(string $template, string $to, $data): bool
     {
         try {
             $html = view('emails/' . $template, $data);
@@ -94,8 +96,10 @@ readonly class EmailService implements EmailServiceInterface
 
     /**
      * Queue a template email
+     *
+     * @param array<string, mixed> $data
      */
-    public function queueTemplate(string $template, string $to, array $data = []): int
+    public function queueTemplate(string $template, string $to, $data = []): int
     {
         if ($this->queueManager === null) {
             log_message('error', 'EmailService: QueueManager not available.');

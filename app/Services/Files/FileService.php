@@ -293,7 +293,7 @@ class FileService implements FileServiceInterface
      *
      * @return array<array{resource: string, resource_id: int, label: string|null, role: string}>
      */
-    public function getUsages(int $id, ?SecurityContext $context = null): array
+    public function getUsages(int $id, ?SecurityContext $context = null)
     {
         if ($context?->user_id === null) {
             throw new AuthorizationException(lang('Api.unauthorized'));
@@ -316,7 +316,7 @@ class FileService implements FileServiceInterface
      *
      * @return array<string, array{path: string, url: string, width: int, height: int}>
      */
-    public function regenerateVariants(int $id, ?SecurityContext $context = null): array
+    public function regenerateVariants(int $id, ?SecurityContext $context = null)
     {
         if ($context?->user_id === null) {
             throw new AuthorizationException(lang('Api.unauthorized'));
@@ -443,17 +443,29 @@ class FileService implements FileServiceInterface
         return $response;
     }
 
-    public function bulkDestroy(array $ids, ?SecurityContext $context = null): array
+    /**
+     * @param list<int> $ids
+     * @return list<array{id:int, ok:bool, error?:string}>
+     */
+    public function bulkDestroy($ids, ?SecurityContext $context = null)
     {
         return $this->runBulk($ids, fn (int $id) => $this->destroy($id, $context));
     }
 
-    public function bulkRestore(array $ids, ?SecurityContext $context = null): array
+    /**
+     * @param list<int> $ids
+     * @return list<array{id:int, ok:bool, error?:string}>
+     */
+    public function bulkRestore($ids, ?SecurityContext $context = null)
     {
         return $this->runBulk($ids, fn (int $id) => $this->restore($id, $context));
     }
 
-    public function bulkForceDestroy(array $ids, ?SecurityContext $context = null): array
+    /**
+     * @param list<int> $ids
+     * @return list<array{id:int, ok:bool, error?:string}>
+     */
+    public function bulkForceDestroy($ids, ?SecurityContext $context = null)
     {
         return $this->runBulk($ids, fn (int $id) => $this->forceDestroy($id, $context));
     }
@@ -486,6 +498,9 @@ class FileService implements FileServiceInterface
         return $results;
     }
 
+    /**
+     * @param \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface|array<string, mixed> $request
+     */
     protected function resolveUserId(object|array $request, ?SecurityContext $context): int
     {
         $data = $request instanceof \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface ? $request->toArray() : (array)$request;

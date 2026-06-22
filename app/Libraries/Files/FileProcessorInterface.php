@@ -15,7 +15,7 @@ interface FileProcessorInterface
      * Process the input data into a standardized ProcessedFile object.
      *
      * @param mixed $input Raw input (UploadedFile or Base64 string)
-     * @param array $options Additional options (mimetypes, max size, etc.)
+     * @param array<string, mixed> $options Additional options (mimetypes, max size, etc.)
      */
     public function process(mixed $input, array $options = []): ProcessedFile;
 }
