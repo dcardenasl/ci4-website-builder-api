@@ -11,9 +11,10 @@ class ImageVariantProcessor
     public const PROCESSABLE = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
     private const VARIANTS = [
-        'thumb' => ['width' => 150, 'height' => 150, 'mode' => 'crop'],
+        'thumb' => ['width' => 150, 'height' => null, 'mode' => 'fit'],
         'sm'    => ['width' => 400, 'height' => null, 'mode' => 'fit'],
         'md'    => ['width' => 800, 'height' => null, 'mode' => 'fit'],
+        'lg'    => ['width' => 1200, 'height' => null, 'mode' => 'fit'],
     ];
 
     /**
@@ -59,11 +60,14 @@ class ImageVariantProcessor
                     $imageLib = \Config\Services::image('gd', null, false);
                     $imageLib->withFile($tmpOriginal);
 
-                    if ($spec['mode'] === 'crop') {
-                        $imageLib->fit($spec['width'], (int) $spec['height'], 'center');
+                    // Resize maintaining aspect ratio
+                    if ($originalDimensions['width'] > 0 && $originalDimensions['height'] > 0) {
+                        $aspectRatio = $originalDimensions['height'] / $originalDimensions['width'];
+                        $calculatedHeight = max(1, (int)($spec['width'] * $aspectRatio));
                     } else {
-                        $imageLib->resize($spec['width'], $spec['width'], true, 'width');
+                        $calculatedHeight = $spec['width'];
                     }
+                    $imageLib->resize($spec['width'], $calculatedHeight, true);
 
                     $imageLib->save($tmpOutput);
 
@@ -77,7 +81,7 @@ class ImageVariantProcessor
                                 'path'   => $variantPath,
                                 'url'    => $storage->url($variantPath),
                                 'width'  => $variantSize !== false ? $variantSize[0] : $spec['width'],
-                                'height' => $variantSize !== false ? $variantSize[1] : ($spec['height'] ?? $spec['width']),
+                                'height' => $variantSize !== false ? $variantSize[1] : $spec['width'],
                             ];
                         }
                     }

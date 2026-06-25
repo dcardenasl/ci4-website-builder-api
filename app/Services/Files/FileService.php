@@ -124,6 +124,7 @@ class FileService implements FileServiceInterface
             'original_name' => sanitize_filename($file->originalName, false),
             'stored_name' => $storedName,
             'mime_type' => $file->mimeType,
+            'category' => $this->categoryFromMimeType($file->mimeType),
             'size' => $file->size,
             'storage_driver' => $this->storage->getDriverName(),
             'path' => $path,
@@ -397,6 +398,7 @@ class FileService implements FileServiceInterface
                 'original_name'  => sanitize_filename($processedFile->originalName, false),
                 'stored_name'    => $storedName,
                 'mime_type'      => $processedFile->mimeType,
+                'category'       => $this->categoryFromMimeType($processedFile->mimeType),
                 'size'           => $processedFile->size,
                 'storage_driver' => $this->storage->getDriverName(),
                 'path'           => $newPath,
@@ -577,5 +579,17 @@ class FileService implements FileServiceInterface
         }
 
         return $file;
+    }
+
+    private function categoryFromMimeType(string $mimeType): string
+    {
+        return match (true) {
+            str_starts_with($mimeType, 'image/') => 'image',
+            str_starts_with($mimeType, 'video/') => 'video',
+            str_starts_with($mimeType, 'audio/') => 'audio',
+            str_starts_with($mimeType, 'application/'),
+            str_starts_with($mimeType, 'text/') => 'document',
+            default => 'document',
+        };
     }
 }

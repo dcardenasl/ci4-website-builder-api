@@ -161,18 +161,24 @@ class FileServiceTest extends CIUnitTestCase
             ->willReturn('http://localhost/uploads/2026/02/17/photo_abc123.jpg');
 
         // Mock FileRepository
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('insert')
+            ->with($this->callback(static function (array $data): bool {
+                return ($data['category'] ?? null) === 'image'
+                    && ($data['mime_type'] ?? null) === 'image/jpeg';
+            }))
+            ->willReturn(1);
+
         $savedEntity = $this->createFileEntity([
             'id' => 1,
             'original_name' => 'photo.jpg',
             'size' => 1024,
             'mime_type' => 'image/jpeg',
+            'category' => 'image',
             'url' => 'http://localhost/uploads/2026/02/17/photo_abc123.jpg',
             'uploaded_at' => date('Y-m-d H:i:s'),
         ]);
-
-        $this->mockFileRepository
-            ->method('insert')
-            ->willReturn(1);
 
         $this->mockFileRepository
             ->method('find')
@@ -575,11 +581,19 @@ class FileServiceTest extends CIUnitTestCase
             'original_name' => $filename,
             'stored_name' => 'logo_1.png',
             'mime_type' => 'image/png',
+            'category' => 'image',
             'url' => "http://localhost/uploads/{$datePath}/logo_1.png",
             'uploaded_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $this->mockFileRepository->method('insert')->willReturn(1);
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('insert')
+            ->with($this->callback(static function (array $data): bool {
+                return ($data['category'] ?? null) === 'image'
+                    && ($data['stored_name'] ?? null) === 'logo_1.png';
+            }))
+            ->willReturn(1);
         $this->mockFileRepository->method('find')->willReturn($savedEntity);
 
         $tempFile = tempnam(sys_get_temp_dir(), 'upload_test_');
@@ -681,6 +695,76 @@ class FileServiceTest extends CIUnitTestCase
         ], service('validation')));
 
         $this->assertInstanceOf(\App\DTO\Response\Files\FileResponseDTO::class, $result);
+        @unlink($tempFile);
+    }
+
+    public function testReplacePersistsMimeDerivedCategory(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'replace_test_');
+        file_put_contents($tempFile, 'replacement contents');
+
+        $existing = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'original_name' => 'old.pdf',
+            'stored_name' => 'old.pdf',
+            'mime_type' => 'application/pdf',
+            'path' => '2026/01/01/old.pdf',
+            'url' => 'http://localhost/uploads/2026/01/01/old.pdf',
+            'category' => 'document',
+        ]);
+
+        $mockFile = $this->createMockUploadedFile([
+            'tempName' => $tempFile,
+            'name' => 'brand-new.png',
+            'extension' => 'png',
+            'mime_type' => 'image/png',
+            'size' => 128,
+        ]);
+
+        $this->mockStorage
+            ->method('put')
+            ->willReturn(true);
+
+        $this->mockStorage
+            ->method('getDriverName')
+            ->willReturn('local');
+
+        $this->mockStorage
+            ->method('url')
+            ->willReturn('http://localhost/uploads/2026/01/01/brand-new.png');
+
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(7, $this->callback(static function (array $data): bool {
+                return ($data['category'] ?? null) === 'image'
+                    && ($data['mime_type'] ?? null) === 'image/png';
+            }))
+            ->willReturn(true);
+
+        $updated = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'original_name' => 'brand-new.png',
+            'stored_name' => 'brand-new.png',
+            'mime_type' => 'image/png',
+            'path' => '2026/01/01/brand-new.png',
+            'url' => 'http://localhost/uploads/2026/01/01/brand-new.png',
+            'category' => 'image',
+        ]);
+
+        $this->mockFileRepository
+            ->method('find')
+            ->willReturn($existing, $updated);
+
+        $result = $this->service->replace(7, new \App\DTO\Request\Files\FileUploadRequestDTO([
+            'file' => $mockFile,
+            'user_id' => 1,
+        ], service('validation')), new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+
+        $this->assertInstanceOf(\App\DTO\Response\Files\FileResponseDTO::class, $result);
+        $this->assertSame('image', $result->toArray()['category']);
         @unlink($tempFile);
     }
 

@@ -20,16 +20,25 @@ class LocalDriver implements StorageDriverInterface
 
     public function __construct()
     {
-        $this->basePath = config('Api')->fileUploadPath;
+        $uploadPath = config('Api')->fileUploadPath;
 
-        // Ensure path is absolute
-        if (!str_starts_with($this->basePath, '/')) {
-            $this->basePath = FCPATH . $this->basePath;
+        // Ensure path is absolute (relative to project root, not public)
+        if (!str_starts_with($uploadPath, '/')) {
+            // Go up from public/ to project root, then add the upload path
+            $projectRoot = dirname(FCPATH);
+            $this->basePath = rtrim($projectRoot, '/') . '/' . ltrim($uploadPath, '/');
+        } else {
+            $this->basePath = $uploadPath;
         }
 
         // Create directory if it doesn't exist
         if (!is_dir($this->basePath)) {
-            mkdir($this->basePath, 0775, true);
+            @mkdir($this->basePath, 0775, true);
+        }
+
+        // Ensure directory is writable
+        if (!is_writable($this->basePath)) {
+            @chmod($this->basePath, 0775);
         }
 
         $adapter = new LocalFilesystemAdapter($this->basePath);
@@ -114,8 +123,8 @@ class LocalDriver implements StorageDriverInterface
      */
     public function url(string $path): string
     {
-        $relativePath = config('Api')->fileUploadPath;
-        return base_url($relativePath . $path);
+        // Files are accessible via the public/ directory symlink
+        return base_url('uploads/' . $path);
     }
 
     /**

@@ -72,6 +72,13 @@ readonly class FileResponseDTO implements DataTransferObjectInterface
         // Handle case where we receive an entity array or raw data
         $size = (int) ($data['file_size'] ?? $data['size'] ?? 0);
         $mime = (string) ($data['mime_type'] ?? '');
+        $derivedCategory = self::categoryFromMime($mime);
+        $category = (string) ($data['category'] ?? '');
+        if ($derivedCategory !== 'document') {
+            $category = $derivedCategory;
+        } elseif ($category === '') {
+            $category = $derivedCategory;
+        }
         $is_image = str_starts_with($mime, 'image/');
 
         $variants = $data['variants'] ?? null;
@@ -84,7 +91,7 @@ readonly class FileResponseDTO implements DataTransferObjectInterface
             original_name: (string) ($data['original_name'] ?? ''),
             filename: (string) ($data['filename'] ?? $data['stored_name'] ?? ''),
             mime_type: $mime,
-            category: (string) ($data['category'] ?? self::categoryFromMime($mime)),
+            category: $category,
             file_size: $size,
             human_size: (string) ($data['human_size'] ?? self::calculateHumanSize($size)),
             is_image: (bool) ($data['is_image'] ?? $is_image),
