@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`InternalEmailController`** — new internal API endpoint for async email queue delivery (`POST /api/v1/internal/email/queue`)
+
 ### Fixed
 
 - **`JwtService`** — enforce required `app.baseURL` configuration via validation and improved error messages with i18n support
