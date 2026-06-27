@@ -72,7 +72,7 @@ class ApiSmokeTest extends BaseCommand
 
         $userId = (int) $row['user_id'];
         $jwtService = Services::jwtService();
-        $permissions = Services::effectivePermissionsResolver()->resolve($userId, 1);
+        $permissions = Services::effectivePermissionsResolver()->resolveAll($userId);
         return $jwtService->encode($userId, $permissions);
     }
 

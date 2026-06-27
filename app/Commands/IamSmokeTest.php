@@ -80,7 +80,7 @@ class IamSmokeTest extends BaseCommand
         }
 
         $userId      = (int) $row['user_id'];
-        $permissions = Services::effectivePermissionsResolver()->resolve($userId, 1);
+        $permissions = Services::effectivePermissionsResolver()->resolveAll($userId);
 
         return Services::jwtService()->encode($userId, $permissions);
     }

@@ -19,13 +19,13 @@ use CodeIgniter\Database\Seeder;
  *
  * Prerequisites:
  *   - php spark db:seed RbacBootstrapSeeder  (creates the hub application + base roles)
- *   - php spark domain:sync-permissions --admin-token=<jwt>  (syncs cms.* permissions from domain)
+ *   - php spark domain:sync-permissions --admin-token=<jwt>  (syncs cms.* permissions under the cms application)
  *
  * Idempotent: safe to re-run. Adds missing permissions, removes stale ones.
  */
 class CmsRolesSeeder extends Seeder
 {
-    private const DOMAIN_APP_CODE = 'self';
+    private const DOMAIN_APP_CODE = 'cms';
 
     /** Editor: day-to-day content management, no structural access */
     private const EDITOR_PERMISSIONS = [

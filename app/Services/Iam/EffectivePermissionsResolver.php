@@ -54,9 +54,30 @@ class EffectivePermissionsResolver implements PermissionResolverInterface
         return $codes;
     }
 
+    /**
+     * @return list<string> all permission codes across all applications (sorted, deduplicated)
+     * @phpstan-ignore dtoFirst.arrayReturn
+     */
+    public function resolveAll(int $userId): array
+    {
+        $cacheKey = self::allCacheKey($userId);
+
+        /** @var list<string>|null $cached */
+        $cached = $this->cache->get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $codes = $this->loadAll($userId);
+        $this->cache->save($cacheKey, $codes, self::CACHE_TTL);
+
+        return $codes;
+    }
+
     public function invalidateForUser(int $userId, int $applicationId): void
     {
         $this->cache->delete(self::cacheKey($userId, $applicationId));
+        $this->cache->delete(self::allCacheKey($userId));
     }
 
     public function invalidateAll(): void
@@ -123,8 +144,53 @@ class EffectivePermissionsResolver implements PermissionResolverInterface
         return array_values(array_unique(array_map(static fn (array $row): string => (string) $row['code'], $rows)));
     }
 
+    /**
+     * @return list<string>
+     */
+    private function loadAll(int $userId): array
+    {
+        if ($this->userIsSuperadmin($userId)) {
+            $query = $this->db->table('permissions')
+                ->select('code')
+                ->orderBy('code', 'ASC')
+                ->get();
+
+            if ($query === false) {
+                return [];
+            }
+
+            $rows = $query->getResultArray();
+
+            return array_values(array_unique(array_map(static fn (array $row): string => (string) $row['code'], $rows)));
+        }
+
+        $query = $this->db->table('user_roles ur')
+            ->select('p.code')
+            ->distinct()
+            ->join('role_permissions rp', 'rp.role_id = ur.role_id')
+            ->join('permissions p', 'p.id = rp.permission_id')
+            ->where('ur.user_id', $userId)
+            ->orderBy('p.code', 'ASC')
+            ->get();
+
+        if ($query === false) {
+            return [];
+        }
+
+        $rows = $query->getResultArray();
+
+        $codes = array_map(static fn (array $row) => (string) $row['code'], $rows);
+
+        return array_values(array_unique($codes));
+    }
+
     private static function cacheKey(int $userId, int $applicationId): string
     {
         return "iam_eff_perms_{$userId}_{$applicationId}";
+    }
+
+    private static function allCacheKey(int $userId): string
+    {
+        return "iam_eff_perms_all_{$userId}";
     }
 }

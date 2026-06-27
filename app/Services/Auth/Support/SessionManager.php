@@ -22,8 +22,6 @@ use App\Services\Iam\EffectivePermissionsResolver;
  */
 class SessionManager
 {
-    private const APPLICATION_ID = 1;
-
     public function __construct(
         protected JwtServiceInterface $jwtService,
         protected RefreshTokenServiceInterface $refreshTokenService,
@@ -42,7 +40,7 @@ class SessionManager
     {
         $userId = (int) ($user->id ?? 0);
         $permissions = $userId > 0
-            ? $this->permissionsResolver->resolve($userId, self::APPLICATION_ID)
+            ? $this->permissionsResolver->resolveAll($userId)
             : [];
 
         $accessToken = $this->jwtService->encode($userId, $permissions);
