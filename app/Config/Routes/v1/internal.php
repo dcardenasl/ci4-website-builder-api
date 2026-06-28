@@ -13,4 +13,5 @@ declare(strict_types=1);
  */
 $routes->group('internal', ['filter' => ['appKeyRequired', 'throttle']], function ($routes): void {
     $routes->post('email/queue', '\App\Controllers\Api\V1\Internal\InternalEmailController::queue');
+    $routes->get('files/batch-meta', '\App\Controllers\Api\V1\Internal\InternalFileMetaController::batchMeta');
 });

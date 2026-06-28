@@ -55,6 +55,7 @@ class FileReferenceRepository implements FileReferenceRepositoryInterface
         $rows = $this->model->where('file_id', $fileId)->findAll();
 
         return array_map(fn ($row) => [
+            'source'      => 'hub',
             'resource'    => $row->resource_type,
             'resource_id' => (int) $row->resource_id,
             'label'       => $row->label,
