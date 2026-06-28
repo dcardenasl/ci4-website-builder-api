@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`FileService`** — automatic file categorization by MIME type (image, video, audio, document)
 - **`ImageVariantProcessor`** — new `lg` (1200px) image variant and improved aspect-ratio-preserving resize logic
 - **`InternalEmailController`** — new internal API endpoint for async email queue delivery (`POST /api/v1/internal/email/queue`)
+- **`InternalFileMetaController`** — new internal M2M endpoint for batch-resolving file metadata by ID (`GET /api/v1/internal/files/batch-meta`)
 
 ### Fixed
 
