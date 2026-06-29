@@ -62,7 +62,7 @@ class CreateUserAction
         }
 
         // Trigger Domain Event for side effects (email, logs, etc.)
-        Events::trigger('user.created', $user, $context);
+        Events::trigger('user.created', $user, $context, $request->locale ?? null);
 
         return $user;
     }

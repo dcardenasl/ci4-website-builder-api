@@ -61,19 +61,23 @@ Events::on('pre_system', static function (): void {
  * User Domain Events
  * --------------------------------------------------------------------
  */
-Events::on('user.created', static function ($user, $context = null): void {
+Events::on('user.created', static function ($user, $context = null, $locale = null): void {
     try {
         $invitationService = \Config\Services::userInvitationService();
-        $locale = null;
+        $resolvedLocale = null;
         if ($context instanceof \dcardenasl\Ci4ApiCore\Dto\SecurityContext) {
-            $locale = is_string($context->metadata['locale'] ?? null) ? (string) $context->metadata['locale'] : null;
+            $resolvedLocale = is_string($context->metadata['locale'] ?? null) ? (string) $context->metadata['locale'] : null;
         }
 
-        if ($locale === null) {
-            $locale = (string) service('request')->getLocale();
+        if ($resolvedLocale === null && is_string($locale) && $locale !== '') {
+            $resolvedLocale = $locale;
         }
 
-        $invitationService->sendInvitation($user, null, $locale);
+        if ($resolvedLocale === null) {
+            $resolvedLocale = (string) service('request')->getLocale();
+        }
+
+        $invitationService->sendInvitation($user, null, $resolvedLocale);
     } catch (\Throwable $e) {
         log_message('error', 'Failed to send invitation email for user ' . $user->id . ': ' . $e->getMessage());
     }

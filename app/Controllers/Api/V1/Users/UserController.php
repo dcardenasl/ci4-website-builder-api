@@ -72,10 +72,12 @@ class UserController extends ApiController
         return $this->handleRequest(
             function ($dto, $context) use ($id) {
                 $clientBaseUrl = $this->request->getVar('client_base_url');
+                $locale = $this->request->getVar('locale');
                 return $this->userService->approve(
                     $id,
                     $context,
-                    is_string($clientBaseUrl) ? $clientBaseUrl : null
+                    is_string($clientBaseUrl) ? $clientBaseUrl : null,
+                    is_string($locale) ? $locale : null
                 );
             }
         );

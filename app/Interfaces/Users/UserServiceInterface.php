@@ -41,5 +41,5 @@ interface UserServiceInterface
     /**
      * Approve a pending user
      */
-    public function approve(int $id, ?SecurityContext $context = null, ?string $clientBaseUrl = null): \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface;
+    public function approve(int $id, ?SecurityContext $context = null, ?string $clientBaseUrl = null, ?string $locale = null): \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface;
 }
