@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`InternalEmailController`** — new internal API endpoint for async email queue delivery (`POST /api/v1/internal/email/queue`)
 - **`InternalFileMetaController`** — new internal M2M endpoint for batch-resolving file metadata by ID (`GET /api/v1/internal/files/batch-meta`)
 
+### Changed
+
+- **`FileService`** — replaced `FilenameGenerator` with `StorageKeyGenerator` for opaque, collision-resistant storage keys; now includes content-hash-based duplicate detection
+
 ### Fixed
 
 - **`JwtService`** — enforce required `app.baseURL` configuration via validation and improved error messages with i18n support
