@@ -4112,6 +4112,12 @@
                         "example": "https://example.com/avatar.jpg",
                         "nullable": true
                     },
+                    "locale": {
+                        "description": "Preferred locale for localized notifications",
+                        "type": "string",
+                        "example": "es",
+                        "nullable": true
+                    },
                     "role_ids": {
                         "description": "Global role ids to assign to the new user (multi-rol). If empty, the default \"user\" role is assigned.",
                         "type": "array",

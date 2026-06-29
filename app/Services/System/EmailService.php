@@ -7,7 +7,7 @@ namespace App\Services\System;
 use App\Interfaces\System\EmailServiceInterface;
 use App\Libraries\Queue\Jobs\SendEmailJob;
 use App\Libraries\Queue\Jobs\SendTemplateEmailJob;
-use dcardenasl\Ci4ApiCore\Queue\QueueManager;
+use dcardenasl\Ci4ApiCore\Queue\QueueManagerInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
@@ -21,7 +21,7 @@ readonly class EmailService implements EmailServiceInterface
 {
     public function __construct(
         protected ?MailerInterface $mailer = null,
-        protected ?QueueManager $queueManager = null,
+        protected ?QueueManagerInterface $queueManager = null,
         protected string $fromAddress = 'no-reply@example.com',
         protected string $fromName = \Config\Project::NAME,
         protected string $defaultLocale = 'en'
@@ -82,21 +82,17 @@ readonly class EmailService implements EmailServiceInterface
      */
     public function sendTemplate(string $template, string $to, $data): bool
     {
+        $previousLocale = null;
+        $requestedLocale = null;
+
         try {
-            $previousLocale = null;
-            $requestedLocale = null;
             if (is_array($data) && isset($data['locale']) && is_string($data['locale'])) {
                 $requestedLocale = strtolower(trim($data['locale']));
             }
 
             if ($requestedLocale !== null && $requestedLocale !== '') {
-                try {
-                    $previousLocale = service('request')->getLocale();
-                    service('request')->setLocale($requestedLocale);
-                    service('language')->setLocale($requestedLocale);
-                } catch (\Throwable) {
-                    $previousLocale = null;
-                }
+                $previousLocale = $this->currentLocale();
+                $this->applyLocale($requestedLocale);
             }
 
             $html = view('emails/' . $template, $data);
@@ -109,12 +105,7 @@ readonly class EmailService implements EmailServiceInterface
             return false;
         } finally {
             if ($previousLocale !== null) {
-                try {
-                    service('request')->setLocale($previousLocale);
-                    service('language')->setLocale($previousLocale);
-                } catch (\Throwable) {
-                    // Best effort only.
-                }
+                $this->applyLocale($previousLocale);
             }
         }
     }
@@ -141,5 +132,29 @@ readonly class EmailService implements EmailServiceInterface
             'to'       => $to,
             'data'     => $data,
         ], 'emails');
+    }
+
+    private function currentLocale(): ?string
+    {
+        try {
+            return (string) service('request')->getLocale();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function applyLocale(string $locale): void
+    {
+        try {
+            service('request')->setLocale($locale);
+        } catch (\Throwable) {
+            // no-op in CLI contexts without a request
+        }
+
+        try {
+            service('language')->setLocale($locale);
+        } catch (\Throwable) {
+            // no-op if language service is unavailable
+        }
     }
 }
