@@ -17,6 +17,10 @@ class ImageVariantProcessor
         'lg'    => ['width' => 1200, 'height' => null, 'mode' => 'fit'],
     ];
 
+    private const WEBP_QUALITY = 82;
+    private const JPEG_QUALITY = 85;
+    private const PNG_QUALITY  = 9;
+
     /**
      * Generate thumb/sm/md variants for an image already in storage.
      *
@@ -49,39 +53,40 @@ class ImageVariantProcessor
                 $originalDimensions = ['width' => $origSize[0], 'height' => $origSize[1]];
             }
 
+            if ($extension === 'gif') {
+                return ['variants' => [], 'dimensions' => $originalDimensions];
+            }
+
             $dir      = dirname($originalPath);
             $basename = pathinfo($originalPath, PATHINFO_FILENAME);
             $dir      = $dir !== '.' ? $dir . '/' : '';
 
             foreach (self::VARIANTS as $key => $spec) {
-                $tmpOutput = $tmpDir . DIRECTORY_SEPARATOR . 'ci4_var_' . $uid . '_' . $key . '.' . $extension;
+                $target       = $this->targetDimensions($originalDimensions, $spec['width']);
+                $outputFormat = $this->outputFormatFor($extension);
+                $tmpOutput    = $tmpDir . DIRECTORY_SEPARATOR . 'ci4_var_' . $uid . '_' . $key . '.' . $outputFormat;
 
                 try {
                     $imageLib = \Config\Services::image('gd', null, false);
                     $imageLib->withFile($tmpOriginal);
 
-                    // Resize maintaining aspect ratio
-                    if ($originalDimensions['width'] > 0 && $originalDimensions['height'] > 0) {
-                        $aspectRatio = $originalDimensions['height'] / $originalDimensions['width'];
-                        $calculatedHeight = max(1, (int)($spec['width'] * $aspectRatio));
-                    } else {
-                        $calculatedHeight = $spec['width'];
-                    }
-                    $imageLib->resize($spec['width'], $calculatedHeight, true);
+                    $imageLib->resize($target['width'], $target['height'], true);
 
-                    $imageLib->save($tmpOutput);
+                    $imageLib->save($tmpOutput, $this->qualityFor($outputFormat));
 
                     $variantContents = file_get_contents($tmpOutput);
                     if ($variantContents !== false) {
-                        $variantPath = $dir . $basename . '_' . $key . '.' . $extension;
+                        $variantPath = $dir . $basename . '_' . $key . '.' . $outputFormat;
 
                         if ($storage->put($variantPath, $variantContents)) {
                             $variantSize = @getimagesize($tmpOutput);
                             $variants[$key] = [
                                 'path'   => $variantPath,
                                 'url'    => $storage->url($variantPath),
-                                'width'  => $variantSize !== false ? $variantSize[0] : $spec['width'],
-                                'height' => $variantSize !== false ? $variantSize[1] : $spec['width'],
+                                'width'  => $variantSize !== false ? $variantSize[0] : $target['width'],
+                                'height' => $variantSize !== false ? $variantSize[1] : $target['height'],
+                                'bytes'  => strlen($variantContents),
+                                'mime_type' => $this->mimeTypeFor($outputFormat),
                             ];
                         }
                     }
@@ -101,6 +106,52 @@ class ImageVariantProcessor
         }
 
         return ['variants' => $variants, 'dimensions' => $originalDimensions];
+    }
+
+    /**
+     * @param array{width: int|null, height: int|null} $originalDimensions
+     * @return array{width: int, height: int}
+     */
+    private function targetDimensions(array $originalDimensions, int $targetWidth): array
+    {
+        $originalWidth  = (int) ($originalDimensions['width'] ?? 0);
+        $originalHeight = (int) ($originalDimensions['height'] ?? 0);
+        if ($originalWidth <= 0 || $originalHeight <= 0) {
+            return ['width' => $targetWidth, 'height' => $targetWidth];
+        }
+
+        if ($originalWidth <= $targetWidth) {
+            return ['width' => $originalWidth, 'height' => $originalHeight];
+        }
+
+        $ratio   = $originalHeight / $originalWidth;
+        $height  = max(1, (int) round($targetWidth * $ratio));
+        return ['width' => $targetWidth, 'height' => $height];
+    }
+
+    private function outputFormatFor(string $extension): string
+    {
+        return 'webp';
+    }
+
+    private function qualityFor(string $format): int
+    {
+        return match (strtolower($format)) {
+            'webp' => self::WEBP_QUALITY,
+            'jpg', 'jpeg' => self::JPEG_QUALITY,
+            'png' => self::PNG_QUALITY,
+            default => self::WEBP_QUALITY,
+        };
+    }
+
+    private function mimeTypeFor(string $format): string
+    {
+        return match (strtolower($format)) {
+            'webp' => 'image/webp',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            default => 'application/octet-stream',
+        };
     }
 
     /**
