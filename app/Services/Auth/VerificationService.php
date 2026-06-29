@@ -34,7 +34,7 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
     /**
      * Send verification email to user
      */
-    public function sendVerificationEmail(int $userId, ?SecurityContext $context = null): bool
+    public function sendVerificationEmail(int $userId, ?SecurityContext $context = null, ?string $locale = null): bool
     {
         $user = $this->userRepository->find($userId);
 
@@ -60,12 +60,14 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
         ]);
 
         $verificationLink = $this->buildVerificationUrl($token);
+        $emailLocale = $this->normalizeLocale($locale);
 
         $this->emailService->queueTemplate('verification', (string) $user->email, [
             'subject' => lang('Email.verification.subject'),
             'display_name' => (string) $user->getDisplayName(),
             'verification_link' => $verificationLink,
             'expires_at' => date('F j, Y g:i A', strtotime($expiresAt) ?: time()),
+            'locale' => $emailLocale,
         ]);
 
         return true;
@@ -134,8 +136,28 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
     /**
      * Resend verification email
      */
-    public function resendVerification(int $userId, ?SecurityContext $context = null): bool
+    public function resendVerification(int $userId, ?SecurityContext $context = null, ?string $locale = null): bool
     {
-        return $this->sendVerificationEmail($userId, $context);
+        return $this->sendVerificationEmail($userId, $context, $locale);
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = strtolower(trim((string) $locale));
+
+        if ($locale === '') {
+            $locale = (string) service('request')->getLocale();
+        }
+
+        $supported = config('App')->supportedLocales ?? [];
+        if ($supported !== []) {
+            foreach ($supported as $supportedLocale) {
+                if (strtolower(trim((string) $supportedLocale)) === $locale) {
+                    return $locale;
+                }
+            }
+        }
+
+        return config('App')->defaultLocale ?? 'en';
     }
 }

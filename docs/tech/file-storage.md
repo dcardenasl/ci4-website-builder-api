@@ -7,8 +7,10 @@ Key Components:
 - **`app/Interfaces/Files/FileRepositoryInterface.php`**: Standardizes metadata retrieval and persistence; adds `findIncludingTrashed()` and `purge()` for trash-aware reads/writes.
 - **`app/Libraries/Files/MultipartProcessor.php`**: Handles standard HTTP file uploads.
 - **`app/Libraries/Files/Base64Processor.php`**: Decodes and validates Data URIs and raw Base64.
-- **`app/Libraries/Files/FilenameGenerator.php`**: Sanitizes names and prevents storage collisions.
+- **`app/Libraries/Files/StorageKeyGenerator.php`**: Generates opaque, collision-resistant storage keys for persisted files.
 - **`app/Support/Files/ProcessedFile.php`**: Standardized value object for stream-based transfers.
+
+The database keeps the user-facing `original_name` intact and stores the physical object key separately as `stored_name`/`path`. The physical key is opaque, date-partitioned, and derived from a short content hash plus randomness so it does not depend on the original filename.
 
 Storage Drivers (`app/Libraries/Storage/`):
 - **LocalDriver**: Stores files in `writable/uploads/`.

@@ -83,6 +83,22 @@ readonly class EmailService implements EmailServiceInterface
     public function sendTemplate(string $template, string $to, $data): bool
     {
         try {
+            $previousLocale = null;
+            $requestedLocale = null;
+            if (is_array($data) && isset($data['locale']) && is_string($data['locale'])) {
+                $requestedLocale = strtolower(trim($data['locale']));
+            }
+
+            if ($requestedLocale !== null && $requestedLocale !== '') {
+                try {
+                    $previousLocale = service('request')->getLocale();
+                    service('request')->setLocale($requestedLocale);
+                    service('language')->setLocale($requestedLocale);
+                } catch (\Throwable) {
+                    $previousLocale = null;
+                }
+            }
+
             $html = view('emails/' . $template, $data);
             $subject = (string) ($data['subject'] ?? ('Email: ' . $template));
             $textMessage = isset($data['textMessage']) && is_string($data['textMessage']) ? $data['textMessage'] : null;
@@ -91,6 +107,15 @@ readonly class EmailService implements EmailServiceInterface
         } catch (\Throwable $e) {
             log_message('error', "[Email] Template '{$template}' render/send failed: " . $e->getMessage());
             return false;
+        } finally {
+            if ($previousLocale !== null) {
+                try {
+                    service('request')->setLocale($previousLocale);
+                    service('language')->setLocale($previousLocale);
+                } catch (\Throwable) {
+                    // Best effort only.
+                }
+            }
         }
     }
 

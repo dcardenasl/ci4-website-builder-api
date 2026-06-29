@@ -32,6 +32,9 @@ readonly class RegisterRequestDTO extends BaseRequestDTO
     #[OA\Property(description: 'User password (must be strong)', example: 'P@ssw0rd123!', format: 'password')]
     public string $password;
 
+    #[OA\Property(description: 'Preferred locale for localized emails and messages', example: 'es', nullable: true)]
+    public ?string $locale;
+
     public function rules(): array
     {
         return [
@@ -48,15 +51,23 @@ readonly class RegisterRequestDTO extends BaseRequestDTO
         $this->first_name = trim((string) ($data['first_name'] ?? ''));
         $this->last_name = trim((string) ($data['last_name'] ?? ''));
         $this->password = (string) $data['password'];
+        $locale = isset($data['locale']) ? strtolower(trim((string) $data['locale'])) : '';
+        $this->locale = $locale !== '' ? $locale : null;
     }
 
     public function toArray(): array
     {
-        return [
+        $payload = [
             'email'     => $this->email,
             'first_name' => $this->first_name,
             'last_name'  => $this->last_name,
             'password'  => $this->password,
         ];
+
+        if ($this->locale !== null) {
+            $payload['locale'] = $this->locale;
+        }
+
+        return $payload;
     }
 }

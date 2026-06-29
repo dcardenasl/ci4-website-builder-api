@@ -7,8 +7,10 @@ Componentes Clave:
 - **`app/Interfaces/Files/FileRepositoryInterface.php`**: Estandariza la recuperación y persistencia de metadatos.
 - **`app/Libraries/Files/MultipartProcessor.php`**: Maneja las cargas de archivos HTTP estándar.
 - **`app/Libraries/Files/Base64Processor.php`**: Decodifica y valida Data URIs y Base64 puro.
-- **`app/Libraries/Files/FilenameGenerator.php`**: Sanea nombres y previene colisiones de almacenamiento.
+- **`app/Libraries/Files/StorageKeyGenerator.php`**: Genera claves opacas y resistentes a colisiones para los archivos persistidos.
 - **`app/Support/Files/ProcessedFile.php`**: Value Object estandarizado para transferencias basadas en streams.
+
+La base de datos conserva `original_name` tal como llega desde el cliente y guarda la clave física por separado en `stored_name`/`path`. Esa clave física es opaca, particionada por fecha y derivada de un prefijo corto del hash de contenido más aleatoriedad, así que no depende del nombre original.
 
 Drivers de Almacenamiento (`app/Libraries/Storage/`):
 - **LocalDriver**: Almacena archivos en `writable/uploads/`.

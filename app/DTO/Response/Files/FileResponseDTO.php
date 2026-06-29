@@ -28,7 +28,7 @@ readonly class FileResponseDTO implements DataTransferObjectInterface
         public int $id,
         #[OA\Property(property: 'original_name', description: 'Original filename', example: 'document.pdf')]
         public string $original_name,
-        #[OA\Property(description: 'Stored filename', example: 'abc123_document.pdf')]
+        #[OA\Property(description: 'Opaque stored filename/key', example: 'f8c0d1e2f3a4-9b8c7d6e.pdf')]
         public string $filename,
         #[OA\Property(property: 'mime_type', description: 'MIME type', example: 'application/pdf')]
         public string $mime_type,

@@ -3846,6 +3846,12 @@
                         "type": "string",
                         "format": "password",
                         "example": "P@ssw0rd123!"
+                    },
+                    "locale": {
+                        "description": "Preferred locale for localized emails and messages",
+                        "type": "string",
+                        "example": "es",
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -4780,9 +4786,9 @@
                         "example": "document.pdf"
                     },
                     "filename": {
-                        "description": "Stored filename",
+                        "description": "Opaque stored filename/key",
                         "type": "string",
-                        "example": "abc123_document.pdf"
+                        "example": "f8c0d1e2f3a4-9b8c7d6e.pdf"
                     },
                     "mime_type": {
                         "description": "MIME type",

@@ -14,7 +14,7 @@ interface VerificationServiceInterface
     /**
      * Send verification email to user
      */
-    public function sendVerificationEmail(int $userId, ?SecurityContext $context = null): bool;
+    public function sendVerificationEmail(int $userId, ?SecurityContext $context = null, ?string $locale = null): bool;
 
     /**
      * Verify email with token
@@ -24,5 +24,5 @@ interface VerificationServiceInterface
     /**
      * Resend verification email
      */
-    public function resendVerification(int $userId, ?SecurityContext $context = null): bool;
+    public function resendVerification(int $userId, ?SecurityContext $context = null, ?string $locale = null): bool;
 }

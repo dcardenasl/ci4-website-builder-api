@@ -12,9 +12,9 @@ use App\Interfaces\Files\FileRepositoryInterface;
 use App\Interfaces\Files\FileServiceInterface;
 use App\Interfaces\Files\VirusScannerServiceInterface;
 use App\Libraries\Files\Base64Processor;
-use App\Libraries\Files\FilenameGenerator;
 use App\Libraries\Files\ImageVariantProcessor;
 use App\Libraries\Files\MultipartProcessor;
+use App\Libraries\Files\StorageKeyGenerator;
 use App\Libraries\Storage\StorageManager;
 use App\Support\Files\ProcessedFile;
 use dcardenasl\Ci4ApiCore\Dto\PaginatedResponseDTO;
@@ -42,7 +42,7 @@ class FileService implements FileServiceInterface
         protected \dcardenasl\Ci4ApiCore\Mappers\ResponseMapperInterface $responseMapper,
         protected StorageManager $storage,
         protected AuditServiceInterface $auditService,
-        protected FilenameGenerator $filenameGenerator,
+        protected StorageKeyGenerator $storageKeyGenerator,
         protected MultipartProcessor $multipartProcessor,
         protected Base64Processor $base64Processor,
         protected ImageVariantProcessor $imageVariantProcessor,
@@ -101,7 +101,8 @@ class FileService implements FileServiceInterface
         }
 
         $datePath = date('Y/m/d');
-        $storedName = $this->filenameGenerator->generate($file->originalName, $file->extension, $datePath);
+        $contentHash = $this->hashStream($file->contents);
+        $storedName = $this->storageKeyGenerator->generate($file->extension, $contentHash);
         $path = $datePath . '/' . $storedName;
 
         // Save physical file
@@ -121,7 +122,7 @@ class FileService implements FileServiceInterface
         // Save metadata
         $fileId = $this->fileRepository->insert([
             'user_id' => $userId,
-            'original_name' => sanitize_filename($file->originalName, false),
+            'original_name' => $this->normalizeOriginalName($file->originalName),
             'stored_name' => $storedName,
             'mime_type' => $file->mimeType,
             'category' => $this->categoryFromMimeType($file->mimeType),
@@ -129,7 +130,11 @@ class FileService implements FileServiceInterface
             'storage_driver' => $this->storage->getDriverName(),
             'path' => $path,
             'url' => $this->storage->url($path),
-            'metadata' => json_encode(['extension' => $file->extension, 'uploaded_by' => $userId]),
+            'metadata' => json_encode([
+                'extension'    => $file->extension,
+                'content_hash' => $contentHash,
+                'uploaded_by'  => $userId,
+            ]),
             'uploaded_at' => date('Y-m-d H:i:s'),
             'variants' => $variants !== [] ? json_encode($variants) : null,
             'width'    => $originalDimensions['width'],
@@ -375,7 +380,8 @@ class FileService implements FileServiceInterface
             : $this->multipartProcessor->process($request->file);
 
         $datePath   = date('Y/m/d');
-        $storedName = $this->filenameGenerator->generate($processedFile->originalName, $processedFile->extension, $datePath);
+        $contentHash = $this->hashStream($processedFile->contents);
+        $storedName = $this->storageKeyGenerator->generate($processedFile->extension, $contentHash);
         $newPath    = $datePath . '/' . $storedName;
 
         if (!$this->storage->put($newPath, $processedFile->contents)) {
@@ -391,11 +397,11 @@ class FileService implements FileServiceInterface
             $originalDimensions = $variantResult['dimensions'];
         }
 
-        return $this->wrapInTransaction(function () use ($file, $processedFile, $newPath, $storedName, $variants, $originalDimensions) {
+        return $this->wrapInTransaction(function () use ($file, $processedFile, $newPath, $storedName, $contentHash, $variants, $originalDimensions) {
             $oldPath = (string) $file->path;
 
             $this->fileRepository->update((int) $file->id, [
-                'original_name'  => sanitize_filename($processedFile->originalName, false),
+                'original_name'  => $this->normalizeOriginalName($processedFile->originalName),
                 'stored_name'    => $storedName,
                 'mime_type'      => $processedFile->mimeType,
                 'category'       => $this->categoryFromMimeType($processedFile->mimeType),
@@ -403,7 +409,10 @@ class FileService implements FileServiceInterface
                 'storage_driver' => $this->storage->getDriverName(),
                 'path'           => $newPath,
                 'url'            => $this->storage->url($newPath),
-                'metadata'       => json_encode(['extension' => $processedFile->extension]),
+                'metadata'       => json_encode([
+                    'extension'    => $processedFile->extension,
+                    'content_hash' => $contentHash,
+                ]),
                 'variants'       => $variants !== [] ? json_encode($variants) : null,
                 'width'          => $originalDimensions['width'],
                 'height'         => $originalDimensions['height'],
@@ -514,6 +523,36 @@ class FileService implements FileServiceInterface
         }
         return $userId;
     }
+
+    private function normalizeOriginalName(string $originalName): string
+    {
+        $name = pathinfo(trim($originalName), PATHINFO_BASENAME);
+        $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?? '';
+        $name = trim($name);
+
+        if ($name === '') {
+            return 'file';
+        }
+
+        return function_exists('mb_substr') ? mb_substr($name, 0, 255) : substr($name, 0, 255);
+    }
+
+    private function hashStream(mixed $stream): string
+    {
+        if (! is_resource($stream)) {
+            throw new \RuntimeException(lang('Files.hash_stream_invalid'));
+        }
+
+        $context = hash_init('sha256');
+        if (! hash_update_stream($context, $stream)) {
+            throw new \RuntimeException(lang('Files.hash_stream_failed'));
+        }
+
+        rewind($stream);
+
+        return hash_final($context);
+    }
+
     protected function findFileAndAuthorize(
         int $id,
         int $userId,

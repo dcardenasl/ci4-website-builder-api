@@ -55,4 +55,8 @@ return [
 
     // Reemplazo
     'replace_success' => 'Archivo reemplazado exitosamente.',
+
+    // Hash de stream
+    'hash_stream_invalid' => 'Se esperaba un stream legible para el hash del archivo.',
+    'hash_stream_failed' => 'Error al hacer hash del archivo subido.',
 ];

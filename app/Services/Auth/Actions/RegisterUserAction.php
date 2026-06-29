@@ -31,6 +31,7 @@ class RegisterUserAction
         $requiresVerification = Hasher::isEmailVerificationRequired();
         $status = $requiresVerification ? 'pending_approval' : 'active';
         $now = date('Y-m-d H:i:s');
+        $locale = $request->locale;
 
         $userId = $this->userRepository->insert([
             'email'      => $request->email,
@@ -56,7 +57,7 @@ class RegisterUserAction
 
         if ($requiresVerification) {
             try {
-                $this->verificationService->sendVerificationEmail((int) $userId, $context);
+                $this->verificationService->sendVerificationEmail((int) $userId, $context, $locale);
             } catch (\Throwable $exception) {
                 log_message('error', 'Failed to send verification email: ' . $exception->getMessage());
             }
@@ -66,6 +67,7 @@ class RegisterUserAction
                     'subject' => lang('Email.accountApproved.subject'),
                     'display_name' => $user->getDisplayName(),
                     'login_link' => $this->buildLoginUrl(),
+                    'locale' => $this->normalizeLocale($locale),
                 ]);
             } catch (\Throwable $exception) {
                 log_message('error', 'Failed to queue approval email: ' . $exception->getMessage());
@@ -73,5 +75,22 @@ class RegisterUserAction
         }
 
         return $user;
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = strtolower(trim((string) $locale));
+        if ($locale === '') {
+            $locale = (string) service('request')->getLocale();
+        }
+
+        $supported = config('App')->supportedLocales ?? [];
+        foreach ($supported as $supportedLocale) {
+            if (strtolower(trim((string) $supportedLocale)) === $locale) {
+                return $locale;
+            }
+        }
+
+        return config('App')->defaultLocale ?? 'en';
     }
 }

@@ -20,7 +20,7 @@ trait FileDomainServices
             static::fileResponseMapper(),
             $storage,
             static::auditService(),
-            new \App\Libraries\Files\FilenameGenerator($storage),
+            new \App\Libraries\Files\StorageKeyGenerator(),
             new \App\Libraries\Files\MultipartProcessor(),
             new \App\Libraries\Files\Base64Processor(),
             new \App\Libraries\Files\ImageVariantProcessor(),

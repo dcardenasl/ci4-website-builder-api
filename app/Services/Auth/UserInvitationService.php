@@ -28,7 +28,7 @@ class UserInvitationService
     /**
      * Send invitation email to a newly created user.
      */
-    public function sendInvitation(UserEntity $user, ?string $clientBaseUrl = null): void
+    public function sendInvitation(UserEntity $user, ?string $clientBaseUrl = null, ?string $locale = null): void
     {
         $email = (string) ($user->email ?? '');
         if ($email === '') {
@@ -53,6 +53,24 @@ class UserInvitationService
             'display_name' => $displayName,
             'reset_link' => $resetLink,
             'expires_in' => '60 minutes',
+            'locale' => $this->normalizeLocale($locale),
         ]);
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = strtolower(trim((string) $locale));
+        if ($locale === '') {
+            $locale = (string) service('request')->getLocale();
+        }
+
+        $supported = config('App')->supportedLocales ?? [];
+        foreach ($supported as $supportedLocale) {
+            if (strtolower(trim((string) $supportedLocale)) === $locale) {
+                return $locale;
+            }
+        }
+
+        return config('App')->defaultLocale ?? 'en';
     }
 }
