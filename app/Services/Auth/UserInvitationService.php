@@ -36,6 +36,7 @@ class UserInvitationService
         }
 
         $token = Token::generate();
+        $emailLocale = $this->normalizeLocale($locale);
 
         // Standardize the password reset invitation flow
         $this->passwordResetModel->where('email', $email)->delete();
@@ -49,11 +50,11 @@ class UserInvitationService
         $displayName = (string) $user->getDisplayName();
 
         $this->emailService->queueTemplate('invitation', $email, [
-            'subject' => lang('Email.invitation.subject'),
+            'subject' => $this->subjectForLocale('Email.invitation.subject', $emailLocale),
             'display_name' => $displayName,
             'reset_link' => $resetLink,
             'expires_in' => '60 minutes',
-            'locale' => $this->normalizeLocale($locale),
+            'locale' => $emailLocale,
         ]);
     }
 
@@ -72,5 +73,41 @@ class UserInvitationService
         }
 
         return config('App')->defaultLocale ?? 'en';
+    }
+
+    private function subjectForLocale(string $line, string $locale): string
+    {
+        $previous = $this->currentLocale();
+        $this->applyLocale($locale);
+
+        try {
+            return lang($line);
+        } finally {
+            if ($previous !== null) {
+                $this->applyLocale($previous);
+            }
+        }
+    }
+
+    private function currentLocale(): ?string
+    {
+        try {
+            return (string) service('request')->getLocale();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function applyLocale(string $locale): void
+    {
+        try {
+            service('request')->setLocale($locale);
+        } catch (\Throwable) {
+        }
+
+        try {
+            service('language')->setLocale($locale);
+        } catch (\Throwable) {
+        }
     }
 }

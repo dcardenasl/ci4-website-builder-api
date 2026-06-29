@@ -59,11 +59,11 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
             'verification_token_expires' => $expiresAt,
         ]);
 
-        $verificationLink = $this->buildVerificationUrl($token);
         $emailLocale = $this->normalizeLocale($locale);
+        $verificationLink = $this->buildVerificationUrl($token);
 
         $this->emailService->queueTemplate('verification', (string) $user->email, [
-            'subject' => lang('Email.verification.subject'),
+            'subject' => $this->subjectForLocale('Email.verification.subject', $emailLocale),
             'display_name' => (string) $user->getDisplayName(),
             'verification_link' => $verificationLink,
             'expires_at' => date('F j, Y g:i A', strtotime($expiresAt) ?: time()),
@@ -159,5 +159,41 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
         }
 
         return config('App')->defaultLocale ?? 'en';
+    }
+
+    private function subjectForLocale(string $line, string $locale): string
+    {
+        $previous = $this->currentLocale();
+        $this->applyLocale($locale);
+
+        try {
+            return lang($line);
+        } finally {
+            if ($previous !== null) {
+                $this->applyLocale($previous);
+            }
+        }
+    }
+
+    private function currentLocale(): ?string
+    {
+        try {
+            return (string) service('request')->getLocale();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function applyLocale(string $locale): void
+    {
+        try {
+            service('request')->setLocale($locale);
+        } catch (\Throwable) {
+        }
+
+        try {
+            service('language')->setLocale($locale);
+        } catch (\Throwable) {
+        }
     }
 }
