@@ -31,6 +31,7 @@ class FileServiceTest extends CIUnitTestCase
     protected StorageManager $mockStorage;
     protected \App\Libraries\Files\StorageKeyGenerator $mockStorageKeyGenerator;
     protected AuditServiceInterface $mockAuditService;
+    protected \App\Interfaces\Files\FilePolicyServiceInterface $mockFilePolicy;
 
     protected function setUp(): void
     {
@@ -49,6 +50,13 @@ class FileServiceTest extends CIUnitTestCase
                 strtolower($extension)
             ));
         $this->mockAuditService = $this->createMock(AuditServiceInterface::class);
+        $this->mockFilePolicy = $this->createMock(\App\Interfaces\Files\FilePolicyServiceInterface::class);
+        $this->mockFilePolicy->method('resolveUploadVisibility')->willReturn('private');
+        $this->mockFilePolicy->method('shouldScopeListingsToOwner')->willReturn(true);
+        $this->mockFilePolicy->method('canBypassOwnershipForRead')->willReturn(false);
+        $this->mockFilePolicy->method('canAccessFile')->willReturnCallback(
+            static fn (\App\Entities\FileEntity $file, int $userId): bool => (int) $file->user_id === $userId
+        );
 
         // Inject real processors and a deterministic storage key generator.
         $responseMapper = new \dcardenasl\Ci4ApiCore\Mappers\DtoResponseMapper(
@@ -69,6 +77,8 @@ class FileServiceTest extends CIUnitTestCase
             new \App\Libraries\Files\Base64Processor(),
             $mockVariantProcessor,
             $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class),
+            null,
+            $this->mockFilePolicy
         );
     }
 

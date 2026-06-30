@@ -19,6 +19,7 @@ readonly class FileUploadRequestDTO extends BaseRequestDTO
     public UploadedFile|string $file;
     public int $user_id;
     public ?string $filename;
+    public ?string $visibility;
 
     public function rules(): array
     {
@@ -34,6 +35,9 @@ readonly class FileUploadRequestDTO extends BaseRequestDTO
 
         $this->user_id = (int) $data['user_id'];
         $this->filename = $data['filename'] ?? null;
+        $this->visibility = isset($data['visibility']) && is_string($data['visibility'])
+            ? strtolower(trim($data['visibility']))
+            : null;
 
         $fileData = $this->extractFileFromData($data);
 
@@ -184,6 +188,7 @@ readonly class FileUploadRequestDTO extends BaseRequestDTO
             'file'     => $this->file,
             'user_id'   => $this->user_id,
             'filename' => $this->filename,
+            'visibility' => $this->visibility,
         ];
     }
 }

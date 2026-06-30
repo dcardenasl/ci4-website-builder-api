@@ -7,6 +7,7 @@ namespace App\Services\Files;
 use App\DTO\Request\Files\UpdateFileMetadataRequestDTO;
 use App\DTO\Response\Files\FileDownloadResponseDTO;
 use App\DTO\Response\Files\FileResponseDTO;
+use App\Interfaces\Files\FilePolicyServiceInterface;
 use App\Interfaces\Files\FileReferenceRepositoryInterface;
 use App\Interfaces\Files\FileRepositoryInterface;
 use App\Interfaces\Files\FileServiceInterface;
@@ -47,8 +48,8 @@ class FileService implements FileServiceInterface
         protected Base64Processor $base64Processor,
         protected ImageVariantProcessor $imageVariantProcessor,
         protected FileReferenceRepositoryInterface $fileReferenceRepository,
-        protected ?VirusScannerServiceInterface $virusScanner = null,
-        private bool $userScopedFiles = true
+        protected FilePolicyServiceInterface $filePolicy,
+        protected ?VirusScannerServiceInterface $virusScanner = null
     ) {
     }
 
@@ -59,6 +60,7 @@ class FileService implements FileServiceInterface
     {
         /** @var \App\DTO\Request\Files\FileUploadRequestDTO $request */
         $userId = $this->resolveUserId($request, $context);
+        $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
 
         // 1. Process Input into a standardized ProcessedFile
         $processedFile = $request->isBase64()
@@ -66,13 +68,13 @@ class FileService implements FileServiceInterface
             : $this->multipartProcessor->process($request->file);
 
         // 2. Delegate to storage and metadata persistence
-        return $this->storeAndSaveMetadata($processedFile, $userId);
+        return $this->storeAndSaveMetadata($processedFile, $userId, $visibility);
     }
 
     /**
      * Common logic to store file and save to database
      */
-    protected function storeAndSaveMetadata(ProcessedFile $file, int $userId): FileResponseDTO
+    protected function storeAndSaveMetadata(ProcessedFile $file, int $userId, string $visibility): FileResponseDTO
     {
         // 1. Virus Scanning Phase
         if ($this->virusScanner !== null) {
@@ -134,6 +136,7 @@ class FileService implements FileServiceInterface
                 'extension'    => $file->extension,
                 'content_hash' => $contentHash,
                 'uploaded_by'  => $userId,
+                'visibility'   => $visibility,
             ]),
             'uploaded_at' => date('Y-m-d H:i:s'),
             'variants' => $variants !== [] ? json_encode($variants) : null,
@@ -171,7 +174,7 @@ class FileService implements FileServiceInterface
             ? $this->fileRepository->getModel()
             : null;
         $baseCriteria = function (\dcardenasl\Ci4ApiCore\Filters\QueryBuilder $builder) use ($userId, $trashedMode, $fileModel): void {
-            if ($this->userScopedFiles) {
+            if ($this->filePolicy->shouldScopeListingsToOwner()) {
                 $builder->where('user_id', $userId);
             }
             if ($fileModel === null) {
@@ -378,6 +381,7 @@ class FileService implements FileServiceInterface
         $processedFile = $request->isBase64()
             ? $this->base64Processor->process($request->file, $request->toArray())
             : $this->multipartProcessor->process($request->file);
+        $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
 
         $datePath   = date('Y/m/d');
         $contentHash = $this->hashStream($processedFile->contents);
@@ -397,7 +401,7 @@ class FileService implements FileServiceInterface
             $originalDimensions = $variantResult['dimensions'];
         }
 
-        return $this->wrapInTransaction(function () use ($file, $processedFile, $newPath, $storedName, $contentHash, $variants, $originalDimensions) {
+        return $this->wrapInTransaction(function () use ($file, $processedFile, $newPath, $storedName, $contentHash, $variants, $originalDimensions, $visibility) {
             $oldPath = (string) $file->path;
 
             $this->fileRepository->update((int) $file->id, [
@@ -412,6 +416,7 @@ class FileService implements FileServiceInterface
                 'metadata'       => json_encode([
                     'extension'    => $processedFile->extension,
                     'content_hash' => $contentHash,
+                    'visibility'   => $visibility,
                 ]),
                 'variants'       => $variants !== [] ? json_encode($variants) : null,
                 'width'          => $originalDimensions['width'],
@@ -594,9 +599,9 @@ class FileService implements FileServiceInterface
         }
 
         $effectiveBypass = $bypassOwnership
-            || (in_array($action, ['download', 'view'], true) && !$this->userScopedFiles);
+            || (in_array($action, ['download', 'view'], true) && $this->filePolicy->canBypassOwnershipForRead($context));
 
-        if (!$effectiveBypass && (int) $file->user_id !== $userId) {
+        if (!$effectiveBypass && ! $this->filePolicy->canAccessFile($file, $userId, $action, $context)) {
             $deniedAction = match ($action) {
                 'download'     => 'unauthorized_file_download',
                 'delete'       => 'unauthorized_file_delete',

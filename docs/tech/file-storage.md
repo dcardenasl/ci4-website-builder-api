@@ -20,6 +20,11 @@ Environment Variables:
 - `FILE_STORAGE_DRIVER`: `local` or `s3`.
 - `FILE_MAX_SIZE`: Limit in bytes.
 - `FILE_ALLOWED_TYPES`: Comma-separated extensions (e.g., `jpg,png,pdf`).
+- `FILE_DEFAULT_VISIBILITY`: Default visibility stored with uploads when a caller does not provide one.
+- `FILE_ALLOWED_VISIBILITY`: Comma-separated allow-list for accepted visibility values.
+- `FILE_USER_SCOPED_FILES`: `false` exposes all files to authenticated users; `true` restores owner scoping.
+- `FILE_ALLOW_PRIVILEGED_READ_BYPASS`: kept for compatibility when `FILE_USER_SCOPED_FILES=true`.
+- `FILE_ALLOW_PUBLIC_VISIBILITY`: `true` allows trusted callers to persist public uploads.
 
 Validation:
 All file operations use DTO-based validation. The processors ensure that files are structurally sound and safe before the `FileService` attempts persistence.
