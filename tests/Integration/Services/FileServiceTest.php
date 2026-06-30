@@ -66,6 +66,8 @@ class FileServiceTest extends CIUnitTestCase
         $mockVariantProcessor = $this->createMock(\App\Libraries\Files\ImageVariantProcessor::class);
         $mockVariantProcessor->method('generate')
             ->willReturn(['variants' => [], 'dimensions' => ['width' => null, 'height' => null]]);
+        $mockVirusScanner = $this->createMock(\App\Interfaces\Files\VirusScannerServiceInterface::class);
+        $mockVirusScanner->method('isSafe')->willReturn(true);
 
         $this->service = new FileService(
             $this->mockFileRepository,
@@ -77,8 +79,8 @@ class FileServiceTest extends CIUnitTestCase
             new \App\Libraries\Files\Base64Processor(),
             $mockVariantProcessor,
             $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class),
-            null,
-            $this->mockFilePolicy
+            $this->mockFilePolicy,
+            $mockVirusScanner
         );
     }
 

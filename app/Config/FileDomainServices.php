@@ -24,8 +24,8 @@ trait FileDomainServices
             new \App\Libraries\Files\Base64Processor(),
             new \App\Libraries\Files\ImageVariantProcessor(),
             static::fileReferenceRepository(),
-            static::virusScannerService(),
-            static::filePolicyService()
+            static::filePolicyService(),
+            static::virusScannerService()
         );
     }
 
