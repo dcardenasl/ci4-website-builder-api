@@ -85,7 +85,7 @@ php spark key:generate
 
 # 5. Configure database in .env
 # database.default.hostname = localhost
-# database.default.database = ci4_api
+# database.default.database = ci4_website_builder_api
 # database.default.username = root
 # database.default.password = your_password
 
@@ -395,7 +395,7 @@ For production:
 
 ### Tests Failing
 - Check `phpunit.xml` database configuration
-- Ensure test database exists: `ci4_test`
+- Ensure test database exists: `ci4_website_builder_api_test`
 - Run migrations on test DB: `php spark migrate --env=testing`
 
 ### 404 on Routes

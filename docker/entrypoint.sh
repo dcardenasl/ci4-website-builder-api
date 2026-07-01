@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# First-run bootstrap for the ci4-api Docker container.
+# First-run bootstrap for the ci4-website-builder API Docker container.
 #
 # Idempotent: every step is safe to re-run. The container can be started,
 # stopped, and rebuilt without manual setup between runs.
@@ -72,7 +72,7 @@ fi
 # localhost) would shadow the compose `environment:` overrides.
 upsert_env_key 'database.default.hostname' "${DB_HOST:-db}"
 upsert_env_key 'database.default.port'     "${DB_PORT:-3306}"
-upsert_env_key 'database.default.database' "${MYSQL_DATABASE:-ci4_api}"
+upsert_env_key 'database.default.database' "${MYSQL_DATABASE:-ci4_website_builder_api}"
 upsert_env_key 'database.default.username' "${MYSQL_USER:-ci4_user}"
 upsert_env_key 'database.default.password' "${MYSQL_PASSWORD:-ci4_dev_password}"
 upsert_env_key 'database.default.DBDriver' 'MySQLi'
@@ -99,7 +99,7 @@ for i in $(seq 1 30); do
     $h = getenv("DB_HOST") ?: "db";
     $u = getenv("MYSQL_USER") ?: "ci4_user";
     $p = getenv("MYSQL_PASSWORD") ?: "";
-    $d = getenv("MYSQL_DATABASE") ?: "ci4_api";
+    $d = getenv("MYSQL_DATABASE") ?: "ci4_website_builder_api";
     @$c = mysqli_connect($h, $u, $p, $d);
     exit($c ? 0 : 1);
   '; then

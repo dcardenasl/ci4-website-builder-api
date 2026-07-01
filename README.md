@@ -33,7 +33,7 @@ The DTO-first contract is enforced by `make:crud` scaffolding — generated code
 
 ## Getting Started
 
-The fastest path is the **interactive bootstrapper** — a single command that clones the template, generates all secrets, creates both databases, runs migrations, and provisions the first superadmin:
+The fastest path is the **interactive bootstrapper** — a single command that clones the template, generates all secrets, creates both databases (`ci4_website_builder_api` and `ci4_website_builder_api_test`), runs migrations, and provisions the first superadmin:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dcardenasl/ci4-api-starter/main/install.sh)"
