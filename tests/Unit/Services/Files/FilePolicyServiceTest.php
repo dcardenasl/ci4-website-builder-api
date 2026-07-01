@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Files;
 
+use App\DTO\Request\Files\FileUploadRequestDTO;
 use App\Entities\FileEntity;
 use App\Services\Files\FilePolicyService;
 use CodeIgniter\Test\CIUnitTestCase;
@@ -19,7 +20,25 @@ final class FilePolicyServiceTest extends CIUnitTestCase
         $policy->allowedVisibilities = ['private', 'public'];
 
         $service = new FilePolicyService($policy);
-        $this->assertSame('private', $service->resolveUploadVisibility(['visibility' => 'public'], null));
+        $tempFile = tempnam(sys_get_temp_dir(), 'file-policy-');
+        file_put_contents($tempFile, 'demo');
+        try {
+            $request = new FileUploadRequestDTO([
+                'user_id'    => 1,
+                'file'       => [
+                    'tmp_name' => $tempFile,
+                    'name'     => 'demo.txt',
+                    'type'     => 'text/plain',
+                    'size'     => 4,
+                    'error'    => 0,
+                ],
+                'visibility' => 'public',
+            ]);
+
+            $this->assertSame('private', $service->resolveUploadVisibility($request, null));
+        } finally {
+            @unlink($tempFile);
+        }
     }
 
     public function testCanListAllFilesRespectsGlobalUnscopedMode(): void

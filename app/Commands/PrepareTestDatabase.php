@@ -73,7 +73,7 @@ class PrepareTestDatabase extends BaseCommand
             return $connection;
         } catch (DatabaseException $e) {
             CLI::error('Unable to connect to the tests database: ' . $e->getMessage());
-            CLI::write('Ensure the `ci4_test` schema exists and the credentials in phpunit.xml/.env match.', 'yellow');
+            CLI::write('Ensure the `ci4_website_builder_api_test` schema exists and the credentials in phpunit.xml/.env match.', 'yellow');
             return null;
         }
     }
