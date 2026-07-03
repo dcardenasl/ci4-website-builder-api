@@ -31,6 +31,8 @@ class AuthThrottleFilter implements FilterInterface
         $apiConfig = config('Api');
         $maxAttempts = $apiConfig->authRateLimitRequests;
         $window = $apiConfig->authRateLimitWindow;
+        $path = $this->resolvePath($request);
+        [$maxAttempts, $window] = $this->applyRouteOverrides($path, $maxAttempts, $window);
         $ip = $request->getIPAddress();
         $user_id = $request instanceof ApiRequest ? $request->getAuthUserId() : null;
 
@@ -73,7 +75,7 @@ class AuthThrottleFilter implements FilterInterface
         }
 
         // No API key: use stricter auth route limit by IP.
-        $cacheKey = 'auth_rate_limit_' . md5($ip);
+        $cacheKey = $this->resolveCacheKey($ip, $path);
 
         $remaining = $this->checkRateLimit($cache, $cacheKey, $maxAttempts, $window);
 
@@ -111,5 +113,29 @@ class AuthThrottleFilter implements FilterInterface
             'Auth.tooManyLoginAttempts',
             [$maxAttempts, (int) ($window / 60)]
         );
+    }
+
+    private function resolveCacheKey(string $ip, string $path): string
+    {
+        return 'auth_rate_limit_' . md5($ip . '|' . ltrim($path, '/'));
+    }
+
+    private function resolvePath(RequestInterface $request): string
+    {
+        $path = $request->getUri()->getPath();
+
+        return $path === '' ? '/' : $path;
+    }
+
+    /**
+     * @return array{int,int}
+     */
+    private function applyRouteOverrides(string $path, int $maxAttempts, int $window): array
+    {
+        if (ltrim($path, '/') === 'auth/login') {
+            return [5, $window];
+        }
+
+        return [$maxAttempts, $window];
     }
 }
