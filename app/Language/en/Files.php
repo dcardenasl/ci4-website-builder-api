@@ -43,7 +43,7 @@ return [
     'bulk_item_failed' => 'Operation failed for this file',
 
     // File references
-    'in_use' => 'Cannot permanently delete: this file is referenced by {0} resource(s). Unlink it first.',
+    'in_use' => 'Cannot delete: this file is referenced by {0} resource(s). Unlink it first.',
 
     // Variant generation
     'not_an_image'       => 'Variant generation is only available for image files.',

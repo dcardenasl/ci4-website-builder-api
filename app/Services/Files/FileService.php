@@ -247,6 +247,11 @@ class FileService implements FileServiceInterface
             throw new BadRequestException(lang('Files.already_trashed'));
         }
 
+        $usages = $this->fileReferenceRepository->getByFileId((int) $file->id);
+        if ($usages !== []) {
+            throw new ConflictException(lang('Files.in_use', [count($usages)]));
+        }
+
         return $this->wrapInTransaction(function () use ($file, $context) {
             $this->fileRepository->update($file->id, ['deleted_by_user_id' => $context->user_id]);
             return $this->fileRepository->delete($file->id);

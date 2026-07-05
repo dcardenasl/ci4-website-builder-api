@@ -28,6 +28,7 @@ class FileServiceTest extends CIUnitTestCase
 
     protected FileService $service;
     protected FileRepositoryInterface $mockFileRepository;
+    protected \App\Interfaces\Files\FileReferenceRepositoryInterface $mockFileReferenceRepository;
     protected StorageManager $mockStorage;
     protected \App\Libraries\Files\StorageKeyGenerator $mockStorageKeyGenerator;
     protected AuditServiceInterface $mockAuditService;
@@ -68,6 +69,7 @@ class FileServiceTest extends CIUnitTestCase
             ->willReturn(['variants' => [], 'dimensions' => ['width' => null, 'height' => null]]);
         $mockVirusScanner = $this->createMock(\App\Interfaces\Files\VirusScannerServiceInterface::class);
         $mockVirusScanner->method('isSafe')->willReturn(true);
+        $this->mockFileReferenceRepository = $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class);
 
         $this->service = new FileService(
             $this->mockFileRepository,
@@ -78,7 +80,7 @@ class FileServiceTest extends CIUnitTestCase
             new \App\Libraries\Files\MultipartProcessor(),
             new \App\Libraries\Files\Base64Processor(),
             $mockVariantProcessor,
-            $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class),
+            $this->mockFileReferenceRepository,
             $this->mockFilePolicy,
             $mockVirusScanner
         );
@@ -475,6 +477,31 @@ class FileServiceTest extends CIUnitTestCase
         $result = $this->service->destroy(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
 
         $this->assertTrue($result);
+    }
+
+    public function testDestroyFileInUseThrowsConflictException(): void
+    {
+        $file = $this->createFileEntity([
+            'id' => 1,
+            'user_id' => 1,
+            'path' => '2024/01/01/file.jpg',
+        ]);
+
+        $this->mockFileRepository
+            ->method('find')
+            ->willReturn($file);
+
+        $this->mockFileReferenceRepository
+            ->expects($this->once())
+            ->method('getByFileId')
+            ->with(1)
+            ->willReturn([
+                ['resource' => 'pages', 'resource_id' => 10, 'role' => 'background'],
+            ]);
+
+        $this->expectException(\dcardenasl\Ci4ApiCore\Exceptions\ConflictException::class);
+
+        $this->service->destroy(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
     }
 
     public function testForceDestroyPurgesTrashedFile(): void
