@@ -6,6 +6,7 @@ namespace App\Libraries\Files;
 
 use App\Support\Files\ProcessedFile;
 use CodeIgniter\HTTP\Files\UploadedFile;
+use Config\Mimes;
 use dcardenasl\Ci4ApiCore\Exceptions\BadRequestException;
 use dcardenasl\Ci4ApiCore\Exceptions\ValidationException;
 
@@ -51,9 +52,32 @@ class MultipartProcessor implements FileProcessorInterface
             throw new ValidationException(lang('Files.file_too_large'), ['file' => lang('Files.file_too_large')]);
         }
 
+        $extension = strtolower($file->getExtension());
+
         $allowedTypes = $options['allowedTypes'] ?? explode(',', $apiConfig->fileAllowedTypes);
-        if (!in_array(strtolower($file->getExtension()), $allowedTypes, true)) {
+        if (!in_array($extension, $allowedTypes, true)) {
             throw new ValidationException(lang('Files.invalid_file_type'), ['file' => lang('Files.invalid_file_type')]);
+        }
+
+        // Cross-check the real (fileinfo-detected) mime type against the mimes
+        // registered for the declared extension. Rejects spoofing such as a
+        // ".jpg" whose real content is application/zip. When the extension is
+        // unknown to the mime map we fall through — the allowlist above already
+        // constrained it to known-safe extensions.
+        $realMime = strtolower((string) $file->getMimeType());
+        $expectedMimes = Mimes::$mimes[$extension] ?? null;
+        if ($realMime !== '' && $expectedMimes !== null) {
+            $expectedMimes = array_map('strtolower', (array) $expectedMimes);
+            if (!in_array($realMime, $expectedMimes, true)) {
+                log_message('warning', sprintf(
+                    '[MultipartProcessor] MIME mismatch: extension=%s real=%s name=%s',
+                    $extension,
+                    $realMime,
+                    $file->getName()
+                ));
+
+                throw new ValidationException(lang('Files.file_mime_mismatch'), ['file' => lang('Files.file_mime_mismatch')]);
+            }
         }
     }
 }

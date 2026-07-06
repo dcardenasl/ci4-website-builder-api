@@ -18,6 +18,7 @@ return [
     'upload_failed'       => 'Error al subir el archivo: {0}',
     'file_too_large'       => 'El tamaño del archivo excede el máximo permitido',
     'invalid_file_type'    => 'Tipo de archivo no permitido',
+    'file_mime_mismatch'   => 'El contenido del archivo no coincide con su extensión',
     'storage_failed'      => 'Error al almacenar el archivo',
     'file_not_found'       => 'Archivo no encontrado o acceso denegado',
     'id_required'         => 'El ID del archivo es obligatorio',

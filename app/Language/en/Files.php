@@ -18,6 +18,7 @@ return [
     'upload_failed'       => 'File upload failed: {0}',
     'file_too_large'       => 'File size exceeds maximum allowed size',
     'invalid_file_type'    => 'File type not allowed',
+    'file_mime_mismatch'   => 'File content does not match its extension',
     'storage_failed'      => 'Failed to store file',
     'file_not_found'       => 'File not found or access denied',
     'id_required'         => 'File ID is required',
