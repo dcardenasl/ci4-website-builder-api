@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`MultipartProcessor`** — validate real MIME type (via `fileinfo`) against declared extension to detect spoofing attacks (e.g., `.jpg` with `application/zip` content); logs warning and rejects with `file_mime_mismatch` error
 - **`FileService::destroy()`** — prevent deletion of files with active references (e.g. used by pages, blocks); throws `ConflictException` with resource count
 - **`JwtService`** — enforce required `app.baseURL` configuration via validation and improved error messages with i18n support
 - **`AuthThrottleFilter`** — apply a stricter per-route rate limit override to `auth/login` and key the throttle cache by IP + path instead of IP alone, preventing login brute-force attempts from sharing headroom with other auth routes
