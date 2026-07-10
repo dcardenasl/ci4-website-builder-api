@@ -33,6 +33,8 @@ class FileServiceTest extends CIUnitTestCase
     protected \App\Libraries\Files\StorageKeyGenerator $mockStorageKeyGenerator;
     protected AuditServiceInterface $mockAuditService;
     protected \App\Interfaces\Files\FilePolicyServiceInterface $mockFilePolicy;
+    protected \App\Interfaces\Files\VirusScannerServiceInterface $mockVirusScanner;
+    protected bool $virusScannerResult = true;
 
     protected function setUp(): void
     {
@@ -67,8 +69,8 @@ class FileServiceTest extends CIUnitTestCase
         $mockVariantProcessor = $this->createMock(\App\Libraries\Files\ImageVariantProcessor::class);
         $mockVariantProcessor->method('generate')
             ->willReturn(['variants' => [], 'dimensions' => ['width' => null, 'height' => null]]);
-        $mockVirusScanner = $this->createMock(\App\Interfaces\Files\VirusScannerServiceInterface::class);
-        $mockVirusScanner->method('isSafe')->willReturn(true);
+        $this->mockVirusScanner = $this->createMock(\App\Interfaces\Files\VirusScannerServiceInterface::class);
+        $this->mockVirusScanner->method('isSafe')->willReturnCallback(fn (): bool => $this->virusScannerResult);
         $this->mockFileReferenceRepository = $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class);
 
         $this->service = new FileService(
@@ -82,7 +84,7 @@ class FileServiceTest extends CIUnitTestCase
             $mockVariantProcessor,
             $this->mockFileReferenceRepository,
             $this->mockFilePolicy,
-            $mockVirusScanner
+            $this->mockVirusScanner
         );
     }
 
@@ -824,6 +826,50 @@ class FileServiceTest extends CIUnitTestCase
         $this->assertInstanceOf(\App\DTO\Response\Files\FileResponseDTO::class, $result);
         $this->assertSame('image', $result->toArray()['category']);
         @unlink($tempFile);
+    }
+
+    public function testReplaceRejectsMalwareBeforeWritingToStorage(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'replace_malware_');
+        $this->assertIsString($tempFile);
+        file_put_contents($tempFile, 'malicious replacement contents');
+
+        $existing = $this->createFileEntity([
+            'id'            => 7,
+            'user_id'       => 1,
+            'original_name' => 'old.pdf',
+            'stored_name'   => 'stored-old.pdf',
+            'mime_type'     => 'application/pdf',
+            'path'          => '2026/07/10/stored-old.pdf',
+            'url'           => 'http://localhost/uploads/2026/07/10/stored-old.pdf',
+            'category'      => 'document',
+        ]);
+
+        $mockFile = $this->createMockUploadedFile([
+            'tempName'  => $tempFile,
+            'name'      => 'infected.pdf',
+            'extension' => 'pdf',
+            'mime_type' => 'application/pdf',
+            'size'      => 30,
+        ]);
+
+        $this->mockFileRepository->method('find')->willReturn($existing);
+        $this->virusScannerResult = false;
+        $this->mockStorage->expects($this->never())->method('put');
+        $this->mockFileRepository->expects($this->never())->method('update');
+
+        try {
+            $this->service->replace(7, new \App\DTO\Request\Files\FileUploadRequestDTO([
+                'file'    => $mockFile,
+                'user_id' => 1,
+            ], service('validation')), new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+
+            $this->fail('Malware replacement must be rejected.');
+        } catch (BadRequestException $exception) {
+            $this->assertSame(lang('Files.malware_detected'), $exception->getMessage());
+        } finally {
+            @unlink($tempFile);
+        }
     }
 
     // ==================== HELPER METHODS ====================

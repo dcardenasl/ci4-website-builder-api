@@ -76,31 +76,7 @@ class FileService implements FileServiceInterface
      */
     protected function storeAndSaveMetadata(ProcessedFile $file, int $userId, string $visibility): FileResponseDTO
     {
-        // 1. Virus Scanning Phase
-        if ($this->virusScanner !== null) {
-            $tempPath = tempnam(sys_get_temp_dir(), 'api_upload_');
-            if ($tempPath === false) {
-                throw new \RuntimeException(lang('Files.temp_file_creation_failed'));
-            }
-            $tempStream = fopen($tempPath, 'wb');
-
-            if ($tempStream !== false) {
-                // Rewind the stream to ensure we read from start
-                rewind($file->contents);
-                stream_copy_to_stream($file->contents, $tempStream);
-                fclose($tempStream);
-
-                try {
-                    if (!$this->virusScanner->isSafe($tempPath)) {
-                        throw new BadRequestException(lang('Files.malware_detected'));
-                    }
-                } finally {
-                    @unlink($tempPath);
-                    // Rewind again for the final storage process
-                    rewind($file->contents);
-                }
-            }
-        }
+        $this->scanForMalware($file);
 
         $datePath = date('Y/m/d');
         $contentHash = $this->hashStream($file->contents);
@@ -156,6 +132,34 @@ class FileService implements FileServiceInterface
         /** @var FileResponseDTO $response */
         $response = $this->responseMapper->map($savedFile);
         return $response;
+    }
+
+    private function scanForMalware(ProcessedFile $file): void
+    {
+        if ($this->virusScanner !== null) {
+            $tempPath = tempnam(sys_get_temp_dir(), 'api_upload_');
+            if ($tempPath === false) {
+                throw new \RuntimeException(lang('Files.temp_file_creation_failed'));
+            }
+            $tempStream = fopen($tempPath, 'wb');
+
+            if ($tempStream !== false) {
+                // Rewind the stream to ensure we read from start
+                rewind($file->contents);
+                stream_copy_to_stream($file->contents, $tempStream);
+                fclose($tempStream);
+
+                try {
+                    if (!$this->virusScanner->isSafe($tempPath)) {
+                        throw new BadRequestException(lang('Files.malware_detected'));
+                    }
+                } finally {
+                    @unlink($tempPath);
+                    // Rewind again for the final storage process
+                    rewind($file->contents);
+                }
+            }
+        }
     }
 
     /**
@@ -387,6 +391,8 @@ class FileService implements FileServiceInterface
             ? $this->base64Processor->process($request->file, $request->toArray())
             : $this->multipartProcessor->process($request->file);
         $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
+
+        $this->scanForMalware($processedFile);
 
         $datePath   = date('Y/m/d');
         $contentHash = $this->hashStream($processedFile->contents);
