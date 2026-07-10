@@ -167,7 +167,7 @@ class AuthServiceTest extends CIUnitTestCase
             'email' => 'new-unique+' . uniqid('', true) . '@example.com',
             'first_name' => 'New',
             'last_name' => 'User',
-            'password' => 'StrongPass123!',
+            'password' => 'TestPass456!',
         ], service('validation'));
 
         $registerUserAction

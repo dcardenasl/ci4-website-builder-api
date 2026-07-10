@@ -195,14 +195,14 @@ else
   case "$BOOTSTRAP_SA" in
     [Yy])
       print_header "Superadmin"
-      SA_EMAIL="$(ask_with_default "Email" "superadmin@example.com")"
+      SA_EMAIL="$(ask_with_default "Email" "admin@example.com")"
       SA_PASSWORD="$(ask_hidden "Password (min 8 chars)")"
       while [ "${#SA_PASSWORD}" -lt 8 ]; do
         print_warn "Password must be at least 8 characters. Try again." >&2
         SA_PASSWORD="$(ask_hidden "Password (min 8 chars)")"
       done
-      SA_FIRST_NAME="$(ask_with_default "First name" "Super")"
-      SA_LAST_NAME="$(ask_with_default "Last name" "Admin")"
+      SA_FIRST_NAME="$(ask_with_default "First name" "Admin")"
+      SA_LAST_NAME="$(ask_with_default "Last name" "User")"
       php spark users:bootstrap-superadmin \
         --email "$SA_EMAIL" \
         --password "$SA_PASSWORD" \

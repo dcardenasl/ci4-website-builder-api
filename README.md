@@ -59,7 +59,7 @@ composer install
 cp .env.example .env
 # Fill in DB credentials and JWT_SECRET_KEY in .env
 php spark migrate
-php spark users:bootstrap-superadmin --email superadmin@example.com --password 'StrongPass123!' --first-name Super --last-name Admin
+php spark users:bootstrap-superadmin --email admin@example.com --password 'ChangeMe123!' --first-name Admin --last-name User
 ```
 
 > For Docker workflows: `docker compose up -d` is enough — the entrypoint generates secrets, runs migrations, and seeds RBAC on first start. Then `docker compose exec app php spark users:bootstrap-superadmin --email <e> --password <p>` to create the first user. See `GETTING_STARTED.md` for details.
