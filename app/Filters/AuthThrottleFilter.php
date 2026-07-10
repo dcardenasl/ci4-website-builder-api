@@ -136,6 +136,13 @@ class AuthThrottleFilter implements FilterInterface
             return [5, $window];
         }
 
+        // auth/refresh is routine session-renewal traffic (requires a valid
+        // refresh token already, not a guessable credential), so it doesn't
+        // need the brute-force-strength limit applied to login/register/etc.
+        if (ltrim($path, '/') === 'auth/refresh') {
+            return [30, $window];
+        }
+
         return [$maxAttempts, $window];
     }
 }
