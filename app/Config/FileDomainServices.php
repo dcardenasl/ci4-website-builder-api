@@ -13,19 +13,27 @@ trait FileDomainServices
         }
 
         $storage = static::storageManager();
+        $imageVariantProcessor = new \App\Libraries\Files\ImageVariantProcessor();
+        $binaryIngestion = new \App\Services\Files\FileBinaryIngestor(
+            static::fileRepository(),
+            static::fileResponseMapper(),
+            $storage,
+            new \App\Libraries\Files\StorageKeyGenerator(),
+            new \App\Libraries\Files\MultipartProcessor(),
+            new \App\Libraries\Files\Base64Processor(),
+            $imageVariantProcessor,
+            static::virusScannerService(),
+        );
 
         return new \App\Services\Files\FileService(
             static::fileRepository(),
             static::fileResponseMapper(),
             $storage,
             static::auditService(),
-            new \App\Libraries\Files\StorageKeyGenerator(),
-            new \App\Libraries\Files\MultipartProcessor(),
-            new \App\Libraries\Files\Base64Processor(),
-            new \App\Libraries\Files\ImageVariantProcessor(),
+            $imageVariantProcessor,
             static::fileReferenceRepository(),
             static::filePolicyService(),
-            static::virusScannerService()
+            $binaryIngestion,
         );
     }
 
