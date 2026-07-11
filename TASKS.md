@@ -19,6 +19,21 @@
 
 ---
 
+## ✅ Completadas (2026-07-11)
+
+- [PHPSTAN-01..08] Remediación completa de PHPStan tras ampliar `paths` a `app/DTO`, `app/Repositories`, `app/Commands`, `app/Support`. El baseline temporal `phpstan-expanded-baseline.neon` (422 errores) se redujo a 0 y fue eliminado — `phpstan.neon` vuelve a incluir solo `phpstan-baseline.neon` (vacío). Cambios:
+  - Bootstrap: `EXIT_SUCCESS`/`EXIT_ERROR` stubbeados en `phpstan-bootstrap.php` (mismo patrón que `app/Config/Constants.php`, excluido del scan).
+  - `ignoreErrors` documentado y acotado a `app/DTO/*` para `property.readOnlyAssignNotInConstructor` / `property.uninitializedReadonly` — falso positivo conocido del patrón `BaseRequestDTO::map()` (ci4-api-core), no un bug de código.
+  - Bug real encontrado y corregido: `ApiSmokeTest`/`IamSmokeTest` importaban `CodeIgniter\Config\Services` (framework) en vez de `Config\Services` (app, con los traits `jwtService()`/`effectivePermissionsResolver()`).
+  - False-safety: ~15 sitios donde `?->getRowArray()`/`->getResultArray()` se llamaban sobre `ResultInterface|false` sin chequeo explícito (nullsafe no protege contra `false`).
+  - `property.nonObject` en `BootstrapSuperadmin`/`FileReferenceRepository`: narrowing con `@var Entity|null` tras `->first()`, mismo patrón ya usado en 20+ sitios del codebase.
+  - ~59 anotaciones `array<string,mixed>` agregadas (DTOs y Commands).
+  - Generics de `BaseConnection<TConnection,TResult>` normalizados en Commands.
+  - Dead code eliminado: `PrepareTestDatabase::ensureMigrationsTable()` (nunca llamado).
+  - Verificado: PHPStan 0 errores, CS-Fixer limpio, 304 tests unitarios + 142 tests feature en verde.
+
+---
+
 ## ⚪ Backlog
 
 - [API-012] Docker out-of-the-box — `docker/entrypoint.sh` idempotente ✅ (2026-05-15). Pendiente: orquestación cross-repo en `ci4-kickstart` (coordinada con kickstart v1.1.0+).
