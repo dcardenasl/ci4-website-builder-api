@@ -232,7 +232,7 @@ Once you've completed the roadmap:
 
 ## 🧪 Living Example
 
-Walk through the generated `DemoProduct` module in `app/Services/Catalog`, `app/Controllers/Api/V1/Catalog`, and its DTO/tests to see the template structure applied with DTO validation, service orchestration, and documentation artifacts in one place.
+Walk through the maintained `Files` resource in `app/Services/Files`, `app/Controllers/Api/V1/Files`, `app/DTO/*/Files`, and its tests to see DTO validation, service orchestration, and documentation artifacts applied in production code.
 
 ---
 

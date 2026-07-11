@@ -226,7 +226,7 @@ Una vez que hayas completado el mapa de aprendizaje:
 
 ## 🧪 Ejemplo vivo
 
-Consulta el módulo `DemoProduct` generado (dominio `Catalog`) en `app/Services/Catalog`, `app/Controllers/Api/V1/Catalog` y sus DTO/tests para ver el patrón del template aplicado (validación DTO, lógica de servicio y documentación cohesionada).
+Consulta el recurso mantenido `Files` en `app/Services/Files`, `app/Controllers/Api/V1/Files`, `app/DTO/*/Files` y sus tests para ver validación DTO, orquestación de servicios y documentación aplicadas en código de producción.
 
 ---
 
