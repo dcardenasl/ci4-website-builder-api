@@ -39,7 +39,8 @@ class RemoveMirroredPermissions extends BaseCommand
 
         $db = \Config\Database::connect();
 
-        $selfApp = $db->table('applications')->where('code', 'self')->get()->getRowArray();
+        $selfAppResult = $db->table('applications')->where('code', 'self')->get();
+        $selfApp       = $selfAppResult === false ? null : $selfAppResult->getRowArray();
         if ($selfApp === null) {
             CLI::write('[iam:remove-mirrored-permissions] Application "self" not found. Nothing to do.', 'yellow');
             return;
@@ -47,7 +48,8 @@ class RemoveMirroredPermissions extends BaseCommand
         $selfAppId = (int) $selfApp['id'];
 
         // Collect all non-self app codes → namespace prefixes
-        $otherApps = $db->table('applications')->where('code !=', 'self')->get()->getResultArray();
+        $otherAppsResult = $db->table('applications')->where('code !=', 'self')->get();
+        $otherApps       = $otherAppsResult === false ? [] : $otherAppsResult->getResultArray();
         if ($otherApps === []) {
             CLI::write('[iam:remove-mirrored-permissions] No other applications found. Nothing to do.', 'green');
             return;
@@ -56,10 +58,11 @@ class RemoveMirroredPermissions extends BaseCommand
         $prefixes = array_map(static fn (array $app) => (string) $app['code'] . '.', $otherApps);
 
         // Find all permissions under 'self' whose code starts with a foreign prefix
-        $selfPerms = $db->table('permissions')
+        $selfPermsResult = $db->table('permissions')
             ->where('application_id', $selfAppId)
             ->select('id, code')
-            ->get()->getResultArray();
+            ->get();
+        $selfPerms       = $selfPermsResult === false ? [] : $selfPermsResult->getResultArray();
 
         $toRemove = array_filter($selfPerms, static function (array $perm) use ($prefixes): bool {
             foreach ($prefixes as $prefix) {

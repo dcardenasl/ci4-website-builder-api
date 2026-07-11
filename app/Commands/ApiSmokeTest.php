@@ -6,7 +6,7 @@ namespace App\Commands;
 
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
-use CodeIgniter\Config\Services;
+use Config\Services;
 
 /**
  * API Smoke Test & Contract Inspector
@@ -56,14 +56,15 @@ class ApiSmokeTest extends BaseCommand
 
     private function getSuperAdminToken(): ?string
     {
-        /** @var \App\Models\UserModel $userModel */
-        $db = \Config\Database::connect();
-        $row = $db->table('user_roles ur')
+        $db     = \Config\Database::connect();
+        $result = $db->table('user_roles ur')
             ->select('ur.user_id')
             ->join('roles r', 'r.id = ur.role_id')
             ->where('r.code', 'superadmin')
             ->limit(1)
-            ->get()?->getRowArray();
+            ->get();
+
+        $row = $result === false ? null : $result->getRowArray();
 
         if ($row === null) {
             CLI::error('No superadmin found. Run "php spark users:bootstrap-superadmin" first.');
@@ -98,7 +99,7 @@ class ApiSmokeTest extends BaseCommand
             ]);
 
             $statusCode = $response->getStatusCode();
-            $body = json_decode($response->getBody(), true);
+            $body = json_decode((string) $response->getBody(), true);
 
             if ($statusCode >= 200 && $statusCode < 300) {
                 CLI::write("Status: $statusCode OK", 'green');
@@ -113,6 +114,9 @@ class ApiSmokeTest extends BaseCommand
         }
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     */
     private function printContractKeys(array $payload): void
     {
         $data = $payload['data'] ?? $payload;
@@ -134,6 +138,7 @@ class ApiSmokeTest extends BaseCommand
         // Show a snippet
         CLI::write("Snippet:", 'yellow');
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $json = $json === false ? '(unable to encode payload)' : $json;
         CLI::write(strlen($json) > 500 ? substr($json, 0, 500) . "...
 (truncated)" : $json);
     }

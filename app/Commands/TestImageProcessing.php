@@ -41,12 +41,12 @@ class TestImageProcessing extends BaseCommand
 
         // Test 3: Get an actual file and try to process it
         CLI::write('\n3. Testing with Real File:', 'yellow');
-        $db = \Config\Database::connect();
-        $file = $db->table('files')
+        $db     = \Config\Database::connect();
+        $result = $db->table('files')
             ->where('mime_type', 'image/png')
             ->orWhere('mime_type', 'image/jpeg')
-            ->get()
-            ->getRow();
+            ->get();
+        $file   = $result === false ? null : $result->getRow();
 
         if (!$file) {
             CLI::write('   No image files found in DB', 'yellow');
@@ -83,7 +83,7 @@ class TestImageProcessing extends BaseCommand
 
             // Try to resize
             $tmpOutput = sys_get_temp_dir() . '/test_resize.png';
-            $imageLib->resize(400, null, true, 'width');
+            $imageLib->resize(400, 0, true, 'width');
             $imageLib->save($tmpOutput);
 
             if (file_exists($tmpOutput)) {

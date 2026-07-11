@@ -57,6 +57,9 @@ class PrepareTestDatabase extends BaseCommand
         return EXIT_SUCCESS;
     }
 
+    /**
+     * @param BaseConnection<object, object> $db
+     */
     private function seedRbacBootstrap(BaseConnection $db): void
     {
         $config = new \Config\Database();
@@ -65,6 +68,9 @@ class PrepareTestDatabase extends BaseCommand
         CLI::write('Seeded IAM bootstrap (applications, roles, permissions).', 'green');
     }
 
+    /**
+     * @return BaseConnection<object, object>|null
+     */
     private function connectToTestsDatabase(): ?BaseConnection
     {
         try {
@@ -78,6 +84,9 @@ class PrepareTestDatabase extends BaseCommand
         }
     }
 
+    /**
+     * @param BaseConnection<object, object> $db
+     */
     private function dropAllTables(BaseConnection $db): void
     {
         $driver = strtolower($db->DBDriver);
@@ -90,8 +99,9 @@ class PrepareTestDatabase extends BaseCommand
             return;
         }
 
-        $tables = array_filter(
-            $db->listTables(),
+        $existingTables = $db->listTables();
+        $tables         = array_filter(
+            $existingTables === false ? [] : $existingTables,
             static fn ($table) => $table !== 'migrations'
         );
         if (empty($tables)) {
@@ -109,6 +119,9 @@ class PrepareTestDatabase extends BaseCommand
         CLI::write('Dropped all existing tables.');
     }
 
+    /**
+     * @param BaseConnection<object, object> $db
+     */
     private function disableForeignKeys(BaseConnection $db): void
     {
         $driver = strtolower($db->DBDriver);
@@ -117,6 +130,9 @@ class PrepareTestDatabase extends BaseCommand
         }
     }
 
+    /**
+     * @param BaseConnection<object, object> $db
+     */
     private function enableForeignKeys(BaseConnection $db): void
     {
         $driver = strtolower($db->DBDriver);
@@ -125,6 +141,9 @@ class PrepareTestDatabase extends BaseCommand
         }
     }
 
+    /**
+     * @param BaseConnection<object, object> $db
+     */
     private function migrateAppSchema(BaseConnection $db): void
     {
         $config = new Migrations();
@@ -137,6 +156,9 @@ class PrepareTestDatabase extends BaseCommand
         $runner->latest('tests');
     }
 
+    /**
+     * @param BaseConnection<object, object> $db
+     */
     private function resetMigrationHistory(BaseConnection $db): void
     {
         if (! $db->tableExists('migrations')) {
@@ -148,21 +170,14 @@ class PrepareTestDatabase extends BaseCommand
             ->delete();
     }
 
-    private function ensureMigrationsTable(BaseConnection $db): void
-    {
-        $config = new Migrations();
-        $config->enabled = true;
-
-        /** @var MigrationRunner $runner */
-        $runner = service('migrations', $config, $db, false);
-        $runner->setSilent(false);
-        $runner->ensureTable();
-    }
-
+    /**
+     * @param BaseConnection<object, object> $db
+     */
     private function ensureExpectedTablesPresent(BaseConnection $db): bool
     {
-        $tables = $db->listTables();
-        $required = ['users', 'migrations'];
+        $existingTables = $db->listTables();
+        $tables         = $existingTables === false ? [] : $existingTables;
+        $required       = ['users', 'migrations'];
         foreach ($required as $table) {
             if (! in_array($table, $tables, true)) {
                 CLI::error("Required table `{$table}` is missing after migrations.");

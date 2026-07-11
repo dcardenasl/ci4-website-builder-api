@@ -40,9 +40,10 @@ class BootstrapSuperadmin extends BaseCommand
 
         $db = \Config\Database::connect();
 
-        $superadminRole = $db->table('roles')
+        $roleResult     = $db->table('roles')
             ->where('code', 'superadmin')
-            ->get()?->getRowArray();
+            ->get();
+        $superadminRole = $roleResult === false ? null : $roleResult->getRowArray();
 
         if ($superadminRole === null) {
             CLI::error('Superadmin role not found. Run "php spark db:seed RbacBootstrapSeeder" first.');
@@ -52,10 +53,11 @@ class BootstrapSuperadmin extends BaseCommand
         $superadminRoleId = (int) $superadminRole['id'];
 
         // Refuse to run if any user already has the superadmin role
-        $existingSuperadmin = $db->table('user_roles')
+        $existingResult     = $db->table('user_roles')
             ->where('role_id', $superadminRoleId)
             ->limit(1)
-            ->get()?->getRowArray();
+            ->get();
+        $existingSuperadmin = $existingResult === false ? null : $existingResult->getRowArray();
 
         if ($existingSuperadmin !== null) {
             CLI::write('A superadmin already exists. Bootstrap can only run once.', 'yellow');
@@ -65,6 +67,7 @@ class BootstrapSuperadmin extends BaseCommand
         /** @var \App\Models\UserModel $userModel */
         $userModel = model(\App\Models\UserModel::class);
 
+        /** @var \App\Entities\UserEntity|null $existingUser */
         $existingUser = $userModel
             ->withDeleted()
             ->where('email', $email)

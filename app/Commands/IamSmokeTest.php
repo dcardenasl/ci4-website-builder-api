@@ -6,8 +6,8 @@ namespace App\Commands;
 
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
-use CodeIgniter\Config\Services;
 use Config\Database;
+use Config\Services;
 
 /**
  * Smoke test for the IAM admin endpoints.
@@ -65,13 +65,15 @@ class IamSmokeTest extends BaseCommand
 
     private function mintSuperadminToken(): ?string
     {
-        $db  = Database::connect();
-        $row = $db->table('user_roles ur')
+        $db     = Database::connect();
+        $result = $db->table('user_roles ur')
             ->select('ur.user_id')
             ->join('roles r', 'r.id = ur.role_id')
             ->where('r.code', 'superadmin')
             ->limit(1)
-            ->get()?->getRowArray();
+            ->get();
+
+        $row = $result === false ? null : $result->getRowArray();
 
         if ($row === null) {
             CLI::error('No superadmin found. Run "php spark users:bootstrap-superadmin" first.');
@@ -97,7 +99,8 @@ class IamSmokeTest extends BaseCommand
             ],
             CURLOPT_TIMEOUT => 10,
         ]);
-        $body   = curl_exec($ch);
+        $result = curl_exec($ch);
+        $body   = is_string($result) ? $result : false;
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 

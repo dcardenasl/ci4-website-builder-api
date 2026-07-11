@@ -19,7 +19,8 @@ class SyncOwnPermissions extends BaseCommand
     public function run(array $params)
     {
         $db = \Config\Database::connect();
-        $app = $db->table('applications')->where('code', 'self')->get()?->getRowArray();
+        $appResult = $db->table('applications')->where('code', 'self')->get();
+        $app       = $appResult === false ? null : $appResult->getRowArray();
         if ($app === null) {
             CLI::error('Application "self" not found. Run db:seed RbacBootstrapSeeder first.');
             return EXIT_ERROR;
@@ -37,12 +38,12 @@ class SyncOwnPermissions extends BaseCommand
                 continue;
             }
 
-            $row = $db->table('permissions')
+            $permResult = $db->table('permissions')
                 ->select('id')
                 ->where('application_id', $appId)
                 ->where('code', $code)
-                ->get()
-                ?->getRowArray();
+                ->get();
+            $row        = $permResult === false ? null : $permResult->getRowArray();
 
             if ($row !== null) {
                 $existing++;

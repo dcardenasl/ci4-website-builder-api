@@ -20,7 +20,8 @@ class RegenerateFileVariants extends BaseCommand
         $imageVariantProcessor = new \App\Libraries\Files\ImageVariantProcessor();
         $storage = new \App\Libraries\Storage\StorageManager();
 
-        $files = $db->table('files')->get()->getResult('array');
+        $result = $db->table('files')->get();
+        $files  = $result === false ? [] : $result->getResult('array');
 
         if (empty($files)) {
             CLI::write('No files found.', 'yellow');

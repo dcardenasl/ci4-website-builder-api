@@ -8,6 +8,7 @@ use App\Libraries\Iam\SuperadminPermissionAttacher;
 use App\Services\Tokens\Support\ApiKeyMaterialService;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
+use CodeIgniter\Database\BaseConnection;
 
 /**
  * Creates a new application + its baseline `<code>.access` permission and
@@ -103,11 +104,12 @@ class BootstrapApplication extends BaseCommand
     }
 
     /**
-     * @param \CodeIgniter\Database\BaseConnection $db
+     * @param BaseConnection<object, object> $db
      */
-    private function ensureApplication($db, string $code, string $name, string $now): int
+    private function ensureApplication(BaseConnection $db, string $code, string $name, string $now): int
     {
-        $existing = $db->table('applications')->where('code', $code)->get()?->getRowArray();
+        $result   = $db->table('applications')->where('code', $code)->get();
+        $existing = $result === false ? null : $result->getRowArray();
         if ($existing !== null) {
             return (int) $existing['id'];
         }
@@ -123,15 +125,15 @@ class BootstrapApplication extends BaseCommand
     }
 
     /**
-     * @param \CodeIgniter\Database\BaseConnection $db
+     * @param BaseConnection<object, object> $db
      */
-    private function ensurePermission($db, int $appId, string $code, string $now): int
+    private function ensurePermission(BaseConnection $db, int $appId, string $code, string $now): int
     {
-        $existing = $db->table('permissions')
+        $result   = $db->table('permissions')
             ->where('application_id', $appId)
             ->where('code', "{$code}.access")
-            ->get()
-            ?->getRowArray();
+            ->get();
+        $existing = $result === false ? null : $result->getRowArray();
 
         if ($existing !== null) {
             return (int) $existing['id'];
@@ -151,18 +153,19 @@ class BootstrapApplication extends BaseCommand
     }
 
     /**
-     * @param \CodeIgniter\Database\BaseConnection $db
+     * @param BaseConnection<object, object> $db
      */
-    private function resolveUserRoleId($db): ?int
+    private function resolveUserRoleId(BaseConnection $db): ?int
     {
-        $row = $db->table('roles')->where('code', 'user')->get()?->getRowArray();
+        $result = $db->table('roles')->where('code', 'user')->get();
+        $row    = $result === false ? null : $result->getRowArray();
         return $row !== null ? (int) $row['id'] : null;
     }
 
     /**
-     * @param \CodeIgniter\Database\BaseConnection $db
+     * @param BaseConnection<object, object> $db
      */
-    private function ensureRolePermission($db, int $roleId, int $permissionId): void
+    private function ensureRolePermission(BaseConnection $db, int $roleId, int $permissionId): void
     {
         $exists = $db->table('role_permissions')
             ->where('role_id', $roleId)
@@ -178,26 +181,26 @@ class BootstrapApplication extends BaseCommand
     }
 
     /**
-     * @param \CodeIgniter\Database\BaseConnection $db
+     * @param BaseConnection<object, object> $db
      * @return array{id:int,key_prefix:string}|null
      */
-    private function findActiveApiKeyForApplication($db, int $appId): ?array
+    private function findActiveApiKeyForApplication(BaseConnection $db, int $appId): ?array
     {
-        $row = $db->table('api_keys')
+        $result = $db->table('api_keys')
             ->select('id, key_prefix')
             ->where('application_id', $appId)
             ->where('is_active', 1)
             ->limit(1)
-            ->get()
-            ?->getRowArray();
+            ->get();
+        $row    = $result === false ? null : $result->getRowArray();
 
         return $row !== null ? ['id' => (int) $row['id'], 'key_prefix' => (string) $row['key_prefix']] : null;
     }
 
     /**
-     * @param \CodeIgniter\Database\BaseConnection $db
+     * @param BaseConnection<object, object> $db
      */
-    private function createApiKey($db, int $appId, string $name, string $now): string
+    private function createApiKey(BaseConnection $db, int $appId, string $name, string $now): string
     {
         $material = new ApiKeyMaterialService();
         $rawKey   = $material->generateRawKey();
@@ -217,11 +220,10 @@ class BootstrapApplication extends BaseCommand
         ]);
 
         if ($ok === false) {
-            $error = $db->error();
             throw new \RuntimeException(sprintf(
                 'Failed to insert api_key for application_id=%d: %s',
                 $appId,
-                is_array($error) ? json_encode($error) : (string) $error
+                json_encode($db->error())
             ));
         }
 
