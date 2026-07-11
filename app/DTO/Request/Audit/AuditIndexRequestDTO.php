@@ -93,6 +93,10 @@ readonly class AuditIndexRequestDTO extends BaseRequestDTO
         return $data;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $filter
+     */
     private function extractString(array $data, array $filter, string $key): ?string
     {
         $value = $data[$key] ?? $filter[$key] ?? null;
@@ -105,6 +109,10 @@ readonly class AuditIndexRequestDTO extends BaseRequestDTO
         return $normalized === '' ? null : $normalized;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $filter
+     */
     private function extractInt(array $data, array $filter, string $key): ?int
     {
         $value = $data[$key] ?? $filter[$key] ?? null;

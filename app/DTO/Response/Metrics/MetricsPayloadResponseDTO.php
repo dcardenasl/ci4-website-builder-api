@@ -19,6 +19,9 @@ use OpenApi\Attributes as OA;
 )]
 readonly class MetricsPayloadResponseDTO implements DataTransferObjectInterface
 {
+    /**
+     * @param array<int|string, mixed> $payload
+     */
     public function __construct(
         #[OA\Property(
             description: 'Raw metrics payload (shape varies by endpoint)',
@@ -29,6 +32,9 @@ readonly class MetricsPayloadResponseDTO implements DataTransferObjectInterface
     ) {
     }
 
+    /**
+     * @param array<int|string, mixed> $payload
+     */
     public static function fromArray(array $payload): self
     {
         return new self(payload: $payload);

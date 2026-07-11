@@ -21,6 +21,9 @@ use OpenApi\Attributes as OA;
 )]
 readonly class IntrospectResponseDTO implements DataTransferObjectInterface
 {
+    /**
+     * @param list<string> $permissions
+     */
     public function __construct(
         #[OA\Property(property: 'valid', description: 'True if the token is valid, not expired and not revoked', example: true)]
         public bool $valid,
@@ -42,6 +45,9 @@ readonly class IntrospectResponseDTO implements DataTransferObjectInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(

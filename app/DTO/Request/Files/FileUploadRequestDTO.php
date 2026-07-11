@@ -50,6 +50,9 @@ readonly class FileUploadRequestDTO extends BaseRequestDTO
         $this->file = $fileData;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function extractFileFromData(array $data): UploadedFile|string|null
     {
         // 1. Prioritize 'file' key
@@ -88,6 +91,9 @@ readonly class FileUploadRequestDTO extends BaseRequestDTO
         return null;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function findUploadedFileInArray(array $data): ?UploadedFile
     {
         foreach ($data as $value) {
@@ -110,11 +116,17 @@ readonly class FileUploadRequestDTO extends BaseRequestDTO
         return null;
     }
 
+    /**
+     * @param array<string, mixed> $value
+     */
     private function isFileArray(array $value): bool
     {
         return isset($value['tmp_name'], $value['name']);
     }
 
+    /**
+     * @param array<string, mixed> $value
+     */
     private function createUploadedFileFromArray(array $value): UploadedFile
     {
         return new UploadedFile(
@@ -127,6 +139,10 @@ readonly class FileUploadRequestDTO extends BaseRequestDTO
         );
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     private function preparePayloadForLog(array $data): array
     {
         $result = [];

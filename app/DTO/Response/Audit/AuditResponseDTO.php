@@ -20,6 +20,11 @@ use OpenApi\Attributes as OA;
 )]
 readonly class AuditResponseDTO implements DataTransferObjectInterface
 {
+    /**
+     * @param array<string, mixed> $old_values
+     * @param array<string, mixed> $new_values
+     * @param array<string, mixed> $metadata
+     */
     public function __construct(
         #[OA\Property(description: 'Unique log identifier', example: 10)]
         public int $id,
@@ -56,6 +61,9 @@ readonly class AuditResponseDTO implements DataTransferObjectInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         $created_at = $data['created_at'] ?? null;
