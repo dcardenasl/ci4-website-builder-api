@@ -28,7 +28,8 @@ trait IamDomainServices
             static::roleResponseMapper(),
             static::iamAuthorizationService(),
             static::rolePermissionAssignmentService(),
-            static::validation()
+            static::validation(),
+            \Config\Database::connect()
         );
     }
 
@@ -139,7 +140,8 @@ trait IamDomainServices
 
         return new \App\Services\Iam\IamAuthorizationService(
             static::effectivePermissionsResolver(),
-            static::securityAuditLogger()
+            static::securityAuditLogger(),
+            \Config\Database::connect()
         );
     }
 
