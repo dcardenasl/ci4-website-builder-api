@@ -18,6 +18,7 @@ class FileReferenceRepository implements FileReferenceRepositoryInterface
     {
         $db = $this->model->db;
 
+        /** @var \stdClass|null $existing */
         $existing = $this->model
             ->where('resource_type', $resourceType)
             ->where('resource_id', $resourceId)
@@ -52,6 +53,7 @@ class FileReferenceRepository implements FileReferenceRepositoryInterface
 
     public function getByFileId(int $fileId): array
     {
+        /** @var list<\stdClass> $rows */
         $rows = $this->model->where('file_id', $fileId)->findAll();
 
         return array_map(fn ($row) => [

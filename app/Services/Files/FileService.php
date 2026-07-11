@@ -7,24 +7,19 @@ namespace App\Services\Files;
 use App\DTO\Request\Files\UpdateFileMetadataRequestDTO;
 use App\DTO\Response\Files\FileDownloadResponseDTO;
 use App\DTO\Response\Files\FileResponseDTO;
+use App\Interfaces\Files\BinaryIngestionInterface;
 use App\Interfaces\Files\FilePolicyServiceInterface;
 use App\Interfaces\Files\FileReferenceRepositoryInterface;
 use App\Interfaces\Files\FileRepositoryInterface;
 use App\Interfaces\Files\FileServiceInterface;
-use App\Interfaces\Files\VirusScannerServiceInterface;
-use App\Libraries\Files\Base64Processor;
 use App\Libraries\Files\ImageVariantProcessor;
-use App\Libraries\Files\MultipartProcessor;
-use App\Libraries\Files\StorageKeyGenerator;
 use App\Libraries\Storage\StorageManager;
-use App\Support\Files\ProcessedFile;
 use dcardenasl\Ci4ApiCore\Dto\PaginatedResponseDTO;
 use dcardenasl\Ci4ApiCore\Dto\SecurityContext;
 use dcardenasl\Ci4ApiCore\Exceptions\AuthorizationException;
 use dcardenasl\Ci4ApiCore\Exceptions\BadRequestException;
 use dcardenasl\Ci4ApiCore\Exceptions\ConflictException;
 use dcardenasl\Ci4ApiCore\Exceptions\NotFoundException;
-use dcardenasl\Ci4ApiCore\Exceptions\ValidationException;
 use dcardenasl\Ci4ApiCore\Models\Traits\AppliesQueryOptions;
 use dcardenasl\Ci4ApiCore\Services\AuditServiceInterface;
 
@@ -43,13 +38,10 @@ class FileService implements FileServiceInterface
         protected \dcardenasl\Ci4ApiCore\Mappers\ResponseMapperInterface $responseMapper,
         protected StorageManager $storage,
         protected AuditServiceInterface $auditService,
-        protected StorageKeyGenerator $storageKeyGenerator,
-        protected MultipartProcessor $multipartProcessor,
-        protected Base64Processor $base64Processor,
         protected ImageVariantProcessor $imageVariantProcessor,
         protected FileReferenceRepositoryInterface $fileReferenceRepository,
         protected FilePolicyServiceInterface $filePolicy,
-        protected ?VirusScannerServiceInterface $virusScanner = null
+        protected BinaryIngestionInterface $binaryIngestion,
     ) {
     }
 
@@ -62,104 +54,7 @@ class FileService implements FileServiceInterface
         $userId = $this->resolveUserId($request, $context);
         $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
 
-        // 1. Process Input into a standardized ProcessedFile
-        $processedFile = $request->isBase64()
-            ? $this->base64Processor->process($request->file, $request->toArray())
-            : $this->multipartProcessor->process($request->file);
-
-        // 2. Delegate to storage and metadata persistence
-        return $this->storeAndSaveMetadata($processedFile, $userId, $visibility);
-    }
-
-    /**
-     * Common logic to store file and save to database
-     */
-    protected function storeAndSaveMetadata(ProcessedFile $file, int $userId, string $visibility): FileResponseDTO
-    {
-        $this->scanForMalware($file);
-
-        $datePath = date('Y/m/d');
-        $contentHash = $this->hashStream($file->contents);
-        $storedName = $this->storageKeyGenerator->generate($file->extension, $contentHash);
-        $path = $datePath . '/' . $storedName;
-
-        // Save physical file
-        if (!$this->storage->put($path, $file->contents)) {
-            throw new \RuntimeException(lang('Files.storage_error'));
-        }
-
-        $variants           = [];
-        $originalDimensions = ['width' => null, 'height' => null];
-
-        if (in_array($file->mimeType, ImageVariantProcessor::PROCESSABLE, true)) {
-            $variantResult      = $this->imageVariantProcessor->generate($path, $file->extension, $this->storage);
-            $variants           = $variantResult['variants'];
-            $originalDimensions = $variantResult['dimensions'];
-        }
-
-        // Save metadata
-        $fileId = $this->fileRepository->insert([
-            'user_id' => $userId,
-            'original_name' => $this->normalizeOriginalName($file->originalName),
-            'stored_name' => $storedName,
-            'mime_type' => $file->mimeType,
-            'category' => $this->categoryFromMimeType($file->mimeType),
-            'size' => $file->size,
-            'storage_driver' => $this->storage->getDriverName(),
-            'path' => $path,
-            'url' => $this->storage->url($path),
-            'metadata' => json_encode([
-                'extension'    => $file->extension,
-                'content_hash' => $contentHash,
-                'uploaded_by'  => $userId,
-                'visibility'   => $visibility,
-            ]),
-            'uploaded_at' => date('Y-m-d H:i:s'),
-            'variants' => $variants !== [] ? json_encode($variants) : null,
-            'width'    => $originalDimensions['width'],
-            'height'   => $originalDimensions['height'],
-        ]);
-
-        if ($fileId === false || $fileId === true) {
-            $this->storage->delete($path);
-            throw new ValidationException(lang('Files.save_failed'), $this->fileRepository->errors());
-        }
-
-        $savedFile = $this->fileRepository->find($fileId);
-        if ($savedFile === null) {
-            throw new \RuntimeException(sprintf('File row %d disappeared after insert.', (int) $fileId));
-        }
-        /** @var FileResponseDTO $response */
-        $response = $this->responseMapper->map($savedFile);
-        return $response;
-    }
-
-    private function scanForMalware(ProcessedFile $file): void
-    {
-        if ($this->virusScanner !== null) {
-            $tempPath = tempnam(sys_get_temp_dir(), 'api_upload_');
-            if ($tempPath === false) {
-                throw new \RuntimeException(lang('Files.temp_file_creation_failed'));
-            }
-            $tempStream = fopen($tempPath, 'wb');
-
-            if ($tempStream !== false) {
-                // Rewind the stream to ensure we read from start
-                rewind($file->contents);
-                stream_copy_to_stream($file->contents, $tempStream);
-                fclose($tempStream);
-
-                try {
-                    if (!$this->virusScanner->isSafe($tempPath)) {
-                        throw new BadRequestException(lang('Files.malware_detected'));
-                    }
-                } finally {
-                    @unlink($tempPath);
-                    // Rewind again for the final storage process
-                    rewind($file->contents);
-                }
-            }
-        }
+        return $this->binaryIngestion->create($request, $userId, $visibility);
     }
 
     /**
@@ -387,64 +282,8 @@ class FileService implements FileServiceInterface
             throw new BadRequestException(lang('Files.already_trashed'));
         }
 
-        $processedFile = $request->isBase64()
-            ? $this->base64Processor->process($request->file, $request->toArray())
-            : $this->multipartProcessor->process($request->file);
         $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
-
-        $this->scanForMalware($processedFile);
-
-        $datePath   = date('Y/m/d');
-        $contentHash = $this->hashStream($processedFile->contents);
-        $storedName = $this->storageKeyGenerator->generate($processedFile->extension, $contentHash);
-        $newPath    = $datePath . '/' . $storedName;
-
-        if (!$this->storage->put($newPath, $processedFile->contents)) {
-            throw new \RuntimeException(lang('Files.storage_error'));
-        }
-
-        $variants           = [];
-        $originalDimensions = ['width' => null, 'height' => null];
-
-        if (in_array($processedFile->mimeType, ImageVariantProcessor::PROCESSABLE, true)) {
-            $variantResult      = $this->imageVariantProcessor->generate($newPath, $processedFile->extension, $this->storage);
-            $variants           = $variantResult['variants'];
-            $originalDimensions = $variantResult['dimensions'];
-        }
-
-        return $this->wrapInTransaction(function () use ($file, $processedFile, $newPath, $storedName, $contentHash, $variants, $originalDimensions, $visibility) {
-            $oldPath = (string) $file->path;
-
-            $this->fileRepository->update((int) $file->id, [
-                'original_name'  => $this->normalizeOriginalName($processedFile->originalName),
-                'stored_name'    => $storedName,
-                'mime_type'      => $processedFile->mimeType,
-                'category'       => $this->categoryFromMimeType($processedFile->mimeType),
-                'size'           => $processedFile->size,
-                'storage_driver' => $this->storage->getDriverName(),
-                'path'           => $newPath,
-                'url'            => $this->storage->url($newPath),
-                'metadata'       => json_encode([
-                    'extension'    => $processedFile->extension,
-                    'content_hash' => $contentHash,
-                    'visibility'   => $visibility,
-                ]),
-                'variants'       => $variants !== [] ? json_encode($variants) : null,
-                'width'          => $originalDimensions['width'],
-                'height'         => $originalDimensions['height'],
-            ]);
-
-            $this->storage->delete($oldPath);
-
-            $updated = $this->fileRepository->find((int) $file->id);
-            if ($updated === null) {
-                throw new \RuntimeException(sprintf('File row %d disappeared after replace.', (int) $file->id));
-            }
-
-            /** @var FileResponseDTO $response */
-            $response = $this->responseMapper->map($updated);
-            return $response;
-        });
+        return $this->binaryIngestion->replace($file, $request, $visibility);
     }
 
     /**
@@ -540,34 +379,6 @@ class FileService implements FileServiceInterface
         return $userId;
     }
 
-    private function normalizeOriginalName(string $originalName): string
-    {
-        $name = pathinfo(trim($originalName), PATHINFO_BASENAME);
-        $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?? '';
-        $name = trim($name);
-
-        if ($name === '') {
-            return 'file';
-        }
-
-        return function_exists('mb_substr') ? mb_substr($name, 0, 255) : substr($name, 0, 255);
-    }
-
-    private function hashStream(mixed $stream): string
-    {
-        if (! is_resource($stream)) {
-            throw new \RuntimeException(lang('Files.hash_stream_invalid'));
-        }
-
-        $context = hash_init('sha256');
-        if (! hash_update_stream($context, $stream)) {
-            throw new \RuntimeException(lang('Files.hash_stream_failed'));
-        }
-
-        rewind($stream);
-
-        return hash_final($context);
-    }
 
     protected function findFileAndAuthorize(
         int $id,
@@ -636,15 +447,4 @@ class FileService implements FileServiceInterface
         return $file;
     }
 
-    private function categoryFromMimeType(string $mimeType): string
-    {
-        return match (true) {
-            str_starts_with($mimeType, 'image/') => 'image',
-            str_starts_with($mimeType, 'video/') => 'video',
-            str_starts_with($mimeType, 'audio/') => 'audio',
-            str_starts_with($mimeType, 'application/'),
-            str_starts_with($mimeType, 'text/') => 'document',
-            default => 'document',
-        };
-    }
 }

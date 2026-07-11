@@ -98,6 +98,7 @@ class ImageVariantProcessor
             }
         } catch (\Throwable $e) {
             log_message('error', 'ImageVariantProcessor::generate failed: ' . $e->getMessage());
+            $this->deleteVariants($variants, $storage);
             return ['variants' => [], 'dimensions' => $originalDimensions];
         } finally {
             if ($tmpOriginal !== null && file_exists($tmpOriginal)) {
