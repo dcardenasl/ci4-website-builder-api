@@ -114,7 +114,10 @@
             "@i18n-check",
             "@docs-i18n-check",
             "@test"
-        ]
+        ],
+        "format": "@cs-fix",
+        "format:check": "@cs-check",
+        "analyse": "@phpstan"
     },
     "config": {
         "optimize-autoloader": true,
