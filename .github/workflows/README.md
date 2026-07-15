@@ -189,4 +189,4 @@ Add coverage step to `ci.yml`:
 - [Workflow Syntax Reference](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions)
 - [PHPUnit on GitHub Actions](https://github.com/shivammathur/setup-php)
 
-For project-specific CI/CD documentation, see [CI_CD.md](../../CI_CD.md) in the root directory.
+This document is the project-specific CI/CD reference — there is no separate `CI_CD.md`.

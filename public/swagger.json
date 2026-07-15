@@ -3910,21 +3910,6 @@
                 },
                 "type": "object"
             },
-            "AttachRolesRequest": {
-                "required": [
-                    "role_ids"
-                ],
-                "properties": {
-                    "role_ids": {
-                        "description": "Role ids to attach to the membership",
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
-                    }
-                },
-                "type": "object"
-            },
             "ListUserPermissionsRequest": {
                 "title": "List User Permissions Request",
                 "required": [
@@ -5106,27 +5091,6 @@
                 },
                 "type": "object"
             },
-            "PasswordResetResponse": {
-                "title": "Password Reset Response",
-                "description": "Password reset acknowledgement",
-                "required": [
-                    "message",
-                    "success"
-                ],
-                "properties": {
-                    "message": {
-                        "description": "Result message",
-                        "type": "string",
-                        "example": "Password reset successful"
-                    },
-                    "success": {
-                        "description": "Whether the reset was successful",
-                        "type": "boolean",
-                        "example": true
-                    }
-                },
-                "type": "object"
-            },
             "TokenResponse": {
                 "title": "Token Response",
                 "description": "Token Response DTO\n\nReturned by `POST /auth/refresh`. Carries a fresh access/refresh\ntoken pair plus the canonical authenticated user (`MeResponse`) so\nconsumers can re-hydrate UI gating without an extra `/auth/me` call.",
@@ -5152,36 +5116,6 @@
                     },
                     "user": {
                         "$ref": "#/components/schemas/MeResponse"
-                    }
-                },
-                "type": "object"
-            },
-            "VerificationResponse": {
-                "title": "Verification Response",
-                "description": "Verification Response DTO",
-                "required": [
-                    "message",
-                    "user_id",
-                    "email",
-                    "verified_at"
-                ],
-                "properties": {
-                    "message": {
-                        "description": "Success message",
-                        "type": "string"
-                    },
-                    "user_id": {
-                        "description": "Verified user id",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "email": {
-                        "description": "User email",
-                        "type": "string"
-                    },
-                    "verified_at": {
-                        "description": "Verification timestamp",
-                        "type": "string"
                     }
                 },
                 "type": "object"
