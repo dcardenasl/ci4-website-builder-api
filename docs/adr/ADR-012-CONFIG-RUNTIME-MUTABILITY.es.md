@@ -53,7 +53,7 @@ Este ADR resuelve la pregunta.
 ### Negativas
 
 - Los workflows de "hot-reload config" (cambiar TTLs sin restart de proceso) no se soportan. Operadores que quieran esto deben agregar su propia capa runtime-mutable (e.g. un repositorio `RuntimeConfig` respaldado por DB) encima de la config estática — no flaggearla on via truco de env.
-- El `putenv()` en tests debe acompañarse de un reset del singleton de Config. Los tests que lo hacen (`MaintenanceFilterTest`, `JsonFileHandlerTest`, etc.) todos hacen flush via `Factories::reset('config')` o `Services::resetSingle()`.
+- El `putenv()` en tests debe acompañarse de un reset del singleton de Config, con flush via `Factories::reset('config')` o `Services::resetSingle()`.
 
 ### Neutras
 
@@ -63,5 +63,4 @@ Este ADR resuelve la pregunta.
 
 - `app/Config/Api.php` — el patrón del constructor que este ADR documenta.
 - `tests/Unit/Filters/DeprecationHeadersFilterTest.php` — ejemplo de override correcto en tests via `Factories::injectMock`.
-- `tests/Unit/Filters/MaintenanceFilterTest.php` — ejemplo de uso de `putenv()` acotado a setUp/tearDown de un solo test.
 - Hallazgo de auditoría F32 (mayo 2026) — el detonante de este ADR.

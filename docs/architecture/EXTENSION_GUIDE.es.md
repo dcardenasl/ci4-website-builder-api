@@ -22,7 +22,7 @@ Proceso completo paso a paso:
 
 ## Inicio Rápido
 
-Ver [`../GETTING_STARTED.md`](../GETTING_STARTED.md) para un recorrido completo con ejemplos de código.
+Ver [`../../GETTING_STARTED.md`](../../GETTING_STARTED.md) para un recorrido completo con ejemplos de código.
 
 Como referencia mantenida y cercana a producción, revisa el recurso `Files` bajo `app/DTO/*/Files`, `app/Controllers/Api/V1/Files`, `app/Services/Files` y `tests`. Usa `php spark module:check <Resource> --domain <Domain>` para validar tus propios módulos.
 

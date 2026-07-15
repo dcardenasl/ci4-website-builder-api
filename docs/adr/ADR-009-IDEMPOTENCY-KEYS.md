@@ -68,7 +68,7 @@ Before this ADR, no API endpoint in this kit honored the header. A retry created
 ## Implementation pointers
 
 - Migration: `app/Database/Migrations/2026-05-06-100000_CreateIdempotencyKeysTable.php`.
-- Filter: `app/Filters/IdempotencyFilter.php`. Alias `idempotency` in `Config\Filters::$aliases`.
+- Filter: `vendor/dcardenasl/ci4-api-core/src/Http/Filters/IdempotencyFilter.php`. Alias `idempotency` in `Config\Filters::$aliases`.
 - Tests: `tests/Feature/Filters/IdempotencyFilterTest.php` — covers the full behavior matrix above, 6 cases.
 
 ## Future work

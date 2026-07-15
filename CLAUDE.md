@@ -24,6 +24,13 @@ php spark serve                  # Start dev server at http://localhost:8080
 ```
 
 ### Testing
+
+Prefer the `composer test*` scripts below — they pass `--no-coverage`. Running `vendor/bin/phpunit`
+directly (no flag) triggers a harmless `XDEBUG_MODE=coverage` warning because `phpunit.xml`
+declares a `<coverage>` block for `test:coverage` but xdebug isn't active by default; the run still
+passes, but its exit code becomes non-zero on the warning, which can trip up naive CI-style checks.
+Add `--no-coverage` yourself if you run phpunit directly.
+
 ```bash
 # Run all tests
 vendor/bin/phpunit

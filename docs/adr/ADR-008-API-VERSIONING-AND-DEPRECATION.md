@@ -63,11 +63,11 @@ Without this, clients integrating against v1 have no way to plan migration. CDNs
 ## Implementation pointers
 
 - **Config:** `app/Config/Api.php` — `$apiVersions` array.
-- **Filter:** `app/Filters/DeprecationHeadersFilter.php` — registered as alias `deprecationheaders` and wired in `globals.after` (after `secureheaders`, before `requestLogging`).
+- **Filter:** `vendor/dcardenasl/ci4-api-core/src/Http/Filters/DeprecationHeadersFilter.php` — registered as alias `deprecationheaders` and wired in `globals.after` (after `secureheaders`, before `requestLogging`).
 - **Endpoint:** `app/Config/Routes.php` — closure for `GET /api/versions` reading from `Config\Api`.
 - **Tests:** `tests/Unit/Filters/DeprecationHeadersFilterTest.php` (filter behavior matrix), `tests/Feature/Controllers/ApiVersionsEndpointTest.php` (endpoint contract).
 
 ## Future work
 
-- When v1 enters deprecation, update the runbook (`docs/runbooks/03-cut-new-api-version.md`, B11.2) to walk through: route group duplication → migration of code paths → CHANGELOG note → headers update → sunset removal.
+- When v1 enters deprecation, write the "cut a new API version" runbook (B11.2, not yet authored — see `docs/runbooks/` for the existing numbered runbooks) to walk through: route group duplication → migration of code paths → CHANGELOG note → headers update → sunset removal.
 - Consider exposing a `Warning` header as well (RFC 7234 §5.5) for richer free-text deprecation reasons. Out of scope for v0.x of this policy.

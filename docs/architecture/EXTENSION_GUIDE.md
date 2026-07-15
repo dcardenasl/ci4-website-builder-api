@@ -38,7 +38,7 @@ The command generates migration, entity, model, interface, service, controller, 
 
 ## Quick Start
 
-See [`../GETTING_STARTED.md`](../GETTING_STARTED.md) for a complete walkthrough with code examples.
+See [`../../GETTING_STARTED.md`](../../GETTING_STARTED.md) for a complete walkthrough with code examples.
 
 ## Adding Custom Filters
 

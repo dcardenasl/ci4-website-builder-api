@@ -181,16 +181,16 @@ Para una referencia rápida condensada, basada en tablas, optimizada para búsqu
 → Ver [`../AGENT_QUICK_REFERENCE.md`](../AGENT_QUICK_REFERENCE.md)
 
 Para tutorial paso a paso, práctico:
-→ Ver [`../GETTING_STARTED.md`](../GETTING_STARTED.md)
+→ Ver [`../../GETTING_STARTED.md`](../../GETTING_STARTED.md)
 
 ## 🧾 Decisiones de Arquitectura (ADRs)
 
 Usa ADRs para decisiones transversales no negociables:
 
-1. [ADR-004-OBSERVABILITY-GOVERNANCE.es.md](ADR-004-OBSERVABILITY-GOVERNANCE.es.md)
-2. [ADR-005-SERVICE-PURITY-DI.es.md](ADR-005-SERVICE-PURITY-DI.es.md)
-3. [ADR-006-FEATURE-TOGGLE-POLICY.es.md](ADR-006-FEATURE-TOGGLE-POLICY.es.md)
-4. [ADR-007-SERVICE-RETURN-CONTRACTS.es.md](ADR-007-SERVICE-RETURN-CONTRACTS.es.md)
+1. [ADR-004-OBSERVABILITY-GOVERNANCE.es.md](../adr/ADR-004-OBSERVABILITY-GOVERNANCE.es.md)
+2. [ADR-005-SERVICE-PURITY-DI.es.md](../adr/ADR-005-SERVICE-PURITY-DI.es.md)
+3. [ADR-006-FEATURE-TOGGLE-POLICY.es.md](../adr/ADR-006-FEATURE-TOGGLE-POLICY.es.md)
+4. [ADR-007-SERVICE-RETURN-CONTRACTS.es.md](../adr/ADR-007-SERVICE-RETURN-CONTRACTS.es.md)
 
 ## 🚨 Cómo manejar el desvío arquitectónico
 

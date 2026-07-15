@@ -64,7 +64,7 @@ No queremos romper a todos los consumidores actuales del sobre default, pero que
 
 ## Punteros de implementación
 
-- Builder + negotiator: `app/Libraries/ApiResponse.php` — métodos `problemDetails`, `negotiateError`, `clientPrefersProblemJson`.
+- Builder + negotiator: `vendor/dcardenasl/ci4-api-core/src/Http/ApiResponse.php` — métodos `problemDetails`, `negotiateError`, `clientPrefersProblemJson`.
 - Tests: `tests/Unit/Libraries/ApiResponseTest.php` — 6 casos cubriendo los nuevos builders.
 
 ## Trabajo futuro

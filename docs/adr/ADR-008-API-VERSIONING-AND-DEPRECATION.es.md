@@ -63,11 +63,11 @@ Sin esto, los clientes integrados contra v1 no pueden planificar migraciones, y 
 ## Punteros de implementación
 
 - **Config:** `app/Config/Api.php` — array `$apiVersions`.
-- **Filtro:** `app/Filters/DeprecationHeadersFilter.php` — alias `deprecationheaders`, cableado en `globals.after` (después de `secureheaders`, antes de `requestLogging`).
+- **Filtro:** `vendor/dcardenasl/ci4-api-core/src/Http/Filters/DeprecationHeadersFilter.php` — alias `deprecationheaders`, cableado en `globals.after` (después de `secureheaders`, antes de `requestLogging`).
 - **Endpoint:** `app/Config/Routes.php` — closure para `GET /api/versions` que lee de `Config\Api`.
 - **Tests:** `tests/Unit/Filters/DeprecationHeadersFilterTest.php` (matriz de comportamiento del filtro), `tests/Feature/Controllers/ApiVersionsEndpointTest.php` (contrato del endpoint).
 
 ## Trabajo futuro
 
-- Cuando v1 entre en deprecación, actualizar el runbook (`docs/runbooks/03-cut-new-api-version.md`, B11.2) con el procedimiento: duplicación de grupo de rutas → migración de code paths → nota en CHANGELOG → actualización de headers → eliminación al sunset.
+- Cuando v1 entre en deprecación, escribir el runbook de "cortar una nueva versión de API" (B11.2, aún no redactado — ver `docs/runbooks/` para los runbooks numerados existentes) con el procedimiento: duplicación de grupo de rutas → migración de code paths → nota en CHANGELOG → actualización de headers → eliminación al sunset.
 - Considerar exponer también un header `Warning` (RFC 7234 §5.5) para razones de deprecación libres en texto. Fuera de alcance para v0.x de esta política.
