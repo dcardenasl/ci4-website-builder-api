@@ -12,6 +12,7 @@ class RequestLogModelTest extends IntegrationTestCase
     public function testGetStatsReturnsSloAndBreakdownMetrics(): void
     {
         $model = new RequestLogModel();
+        $model->builder()->truncate();
         $now = date('Y-m-d H:i:s');
 
         $rows = [
@@ -52,5 +53,31 @@ class RequestLogModelTest extends IntegrationTestCase
         $this->assertArrayHasKey('slo', $stats);
         $this->assertArrayHasKey('p95_target_ms', $stats['slo']);
         $this->assertArrayHasKey('p95_target_met', $stats['slo']);
+    }
+
+    public function testGetTimeseriesBucketsRequestsAndFillsGapsWithZeros(): void
+    {
+        $model = new RequestLogModel();
+        $model->builder()->truncate();
+
+        $model->insert([
+            'method' => 'GET',
+            'uri' => '/api/v1/test',
+            'user_id' => null,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'phpunit',
+            'response_code' => 200,
+            'response_time' => 120,
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $series = $model->getTimeseries('1h');
+
+        $this->assertCount(12, $series['dates']);
+        $this->assertCount(12, $series['requests']);
+        $this->assertCount(12, $series['errors']);
+        $this->assertCount(12, $series['latency']);
+        $this->assertSame(1, array_sum($series['requests']));
+        $this->assertSame(0, array_sum($series['errors']));
     }
 }

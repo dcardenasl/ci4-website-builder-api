@@ -42,6 +42,7 @@ class MetricsControllerTest extends ApiTestCase
             '/api/v1/metrics',
             '/api/v1/metrics/requests',
             '/api/v1/metrics/slow-requests',
+            '/api/v1/metrics/timeseries',
             '/api/v1/metrics/custom/example',
         ];
 
@@ -49,6 +50,29 @@ class MetricsControllerTest extends ApiTestCase
             $result = $this->get($endpoint);
 
             $result->assertStatus(200);
+        }
+    }
+
+    public function testTimeseriesReturnsParallelArraysForEachPeriod(): void
+    {
+        $expectedBuckets = [
+            '1h' => 12,
+            '24h' => 24,
+            '7d' => 7,
+            '30d' => 30,
+        ];
+
+        foreach ($expectedBuckets as $period => $bucketCount) {
+            $result = $this->get('/api/v1/metrics/timeseries?period=' . $period);
+
+            $result->assertStatus(200);
+            $body = json_decode((string) $result->getJSON(), true);
+            $data = $body['data'];
+
+            $this->assertCount($bucketCount, $data['dates']);
+            $this->assertCount($bucketCount, $data['requests']);
+            $this->assertCount($bucketCount, $data['errors']);
+            $this->assertCount($bucketCount, $data['latency']);
         }
     }
 
