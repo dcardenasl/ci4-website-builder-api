@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`MetricsController::timeseries()` endpoint** — new `GET /api/v1/admin/metrics/timeseries` endpoint for time-bucketed request/error/latency series suitable for trend charts in analytics dashboards; parameters include `interval`, `limit`, and optional `start_date`/`end_date`
 - **`FilePolicyService`** — centralized service for file visibility and access control policies; supports configurable default visibility, public/private restrictions, owner-scoped listings, and privileged read bypass
 - **`EffectivePermissionsResolver::resolveAll()`** — new method to resolve all permissions for a user across all applications (cross-app permission resolution with caching)
 - **`RemoveMirroredPermissions` command** — administrative command to clean up mirrored permission assignments
