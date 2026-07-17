@@ -63,6 +63,17 @@ readonly class MetricsService implements \App\Interfaces\System\MetricsServiceIn
     }
 
     /**
+     * Get time-bucketed request/error/latency series for trend charts.
+     */
+    public function getTimeseries(DataTransferObjectInterface $request, ?SecurityContext $context = null): DataTransferObjectInterface
+    {
+        /** @var \App\DTO\Request\Metrics\MetricsQueryRequestDTO $request */
+        return MetricsPayloadResponseDTO::fromArray(
+            $this->requestLogModel->getTimeseries($request->period)
+        );
+    }
+
+    /**
      * Get slow requests with configurable threshold and limit.
      */
     public function getSlowRequests(DataTransferObjectInterface $request, ?SecurityContext $context = null): DataTransferObjectInterface

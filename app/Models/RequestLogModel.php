@@ -124,11 +124,80 @@ class RequestLogModel extends \dcardenasl\Ci4ApiCore\Models\BaseAuditableModel
     private function getSinceFromPeriod(string $period): string
     {
         return match ($period) {
-            'hour' => date('Y-m-d H:i:s', strtotime('-1 hour')),
-            'day' => date('Y-m-d H:i:s', strtotime('-1 day')),
-            'week' => date('Y-m-d H:i:s', strtotime('-1 week')),
-            'month' => date('Y-m-d H:i:s', strtotime('-1 month')),
-            default => date('Y-m-d H:i:s', strtotime('-1 day')),
+            '1h' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+            '7d' => date('Y-m-d H:i:s', strtotime('-7 days')),
+            '30d' => date('Y-m-d H:i:s', strtotime('-30 days')),
+            default => date('Y-m-d H:i:s', strtotime('-24 hours')), // '24h' and unrecognized values
+        };
+    }
+
+    /**
+     * Get time-bucketed request volume, error count, and average latency —
+     * one point per bucket, gaps filled with zeros so charts don't show
+     * misleadingly sparse data.
+     *
+     * @return array{dates: list<string>, requests: list<int>, errors: list<int>, latency: list<float>}
+     */
+    public function getTimeseries(string $period = '24h'): array
+    {
+        [$bucketSeconds, $bucketCount, $labelFormat] = $this->resolveBucketConfig($period);
+        $since = date('Y-m-d H:i:s', time() - ($bucketSeconds * $bucketCount));
+
+        $query = $this->db->table($this->table)
+            ->select(sprintf(
+                'FLOOR(UNIX_TIMESTAMP(created_at) / %1$d) * %1$d as bucket_ts,'
+                . ' COUNT(*) as total,'
+                . ' SUM(CASE WHEN response_code >= 400 THEN 1 ELSE 0 END) as errors,'
+                . ' AVG(response_time) as avg_latency',
+                $bucketSeconds
+            ), false)
+            ->where('created_at >=', $since)
+            ->groupBy('bucket_ts')
+            ->orderBy('bucket_ts', 'ASC')
+            ->get();
+
+        $rows = $query ? $query->getResultArray() : [];
+
+        $byBucket = [];
+        foreach ($rows as $row) {
+            $byBucket[(int) $row['bucket_ts']] = $row;
+        }
+
+        $lastBucket = (int) (floor(time() / $bucketSeconds) * $bucketSeconds);
+        $firstBucket = $lastBucket - (($bucketCount - 1) * $bucketSeconds);
+
+        $dates = [];
+        $requests = [];
+        $errors = [];
+        $latency = [];
+
+        for ($ts = $firstBucket; $ts <= $lastBucket; $ts += $bucketSeconds) {
+            $row = $byBucket[$ts] ?? null;
+
+            $dates[] = date($labelFormat, $ts);
+            $requests[] = $row ? (int) $row['total'] : 0;
+            $errors[] = $row ? (int) $row['errors'] : 0;
+            $latency[] = $row ? round((float) $row['avg_latency'], 2) : 0.0;
+        }
+
+        return [
+            'dates' => $dates,
+            'requests' => $requests,
+            'errors' => $errors,
+            'latency' => $latency,
+        ];
+    }
+
+    /**
+     * @return array{0: int, 1: int, 2: string}
+     */
+    private function resolveBucketConfig(string $period): array
+    {
+        return match ($period) {
+            '1h' => [300, 12, 'H:i'],
+            '7d' => [86400, 7, 'Y-m-d'],
+            '30d' => [86400, 30, 'Y-m-d'],
+            default => [3600, 24, 'Y-m-d H:00'], // '24h' and unrecognized values
         };
     }
 

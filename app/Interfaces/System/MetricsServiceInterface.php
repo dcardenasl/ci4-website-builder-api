@@ -28,6 +28,11 @@ interface MetricsServiceInterface
     public function getRequestStats(\dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface $request, ?SecurityContext $context = null): \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface;
 
     /**
+     * Get time-bucketed request/error/latency series for trend charts
+     */
+    public function getTimeseries(\dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface $request, ?SecurityContext $context = null): \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface;
+
+    /**
      * Get custom metrics by name
      */
     public function getCustomMetric(\dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface $request, ?SecurityContext $context = null): \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface;

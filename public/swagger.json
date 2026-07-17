@@ -3058,6 +3058,61 @@
                 ]
             }
         },
+        "/api/v1/metrics/timeseries": {
+            "get": {
+                "tags": [
+                    "Metrics"
+                ],
+                "summary": "Get time-bucketed request/error/latency series",
+                "operationId": "a68821f455efb59ee5957a9f760ae4e0",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "24h",
+                            "enum": [
+                                "1h",
+                                "24h",
+                                "7d",
+                                "30d"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Time series data: parallel arrays of bucket labels, request counts, error counts, and average latency",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/MetricsPayloadResponse"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedResponse"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/metrics/custom/{name}": {
             "get": {
                 "tags": [
