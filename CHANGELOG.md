@@ -29,3 +29,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`JwtService`** — enforce required `app.baseURL` configuration via validation and improved error messages with i18n support
 - **`AuthThrottleFilter`** — apply a stricter per-route rate limit override to `auth/login` and key the throttle cache by IP + path instead of IP alone, preventing login brute-force attempts from sharing headroom with other auth routes
 - **`AuthThrottleFilter`** — raise the per-route override for `auth/refresh` to 30 requests/hour instead of sharing the strict 3/hour login-brute-force limit, since token refresh requires an already-valid refresh token and isn't a guessable-credential vector
+- **`Api` config** — relax the auth rate limit to 20 requests/5min under `ENVIRONMENT === 'development'`, keeping the strict 3/hour limit in production; the tighter limit was blocking local dev/test workflows
