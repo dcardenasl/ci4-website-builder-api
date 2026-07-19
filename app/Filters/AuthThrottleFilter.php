@@ -132,10 +132,6 @@ class AuthThrottleFilter implements FilterInterface
      */
     private function applyRouteOverrides(string $path, int $maxAttempts, int $window): array
     {
-        if (ltrim($path, '/') === 'auth/login') {
-            return [5, $window];
-        }
-
         // auth/refresh is routine session-renewal traffic (requires a valid
         // refresh token already, not a guessable credential), so it doesn't
         // need the brute-force-strength limit applied to login/register/etc.
