@@ -195,6 +195,28 @@ incantation from docs rather than from the wrapper will hit this silently.
 **Proposed fix:** `app/Commands/MakeCrud.php::gatherFields()` should detect non-TTY before
 calling `gatherFieldsInteractively()` and exit with `CLI::EXIT_ERROR` + helpful message.
 
+### Update — 2026-07-18: re-verified, and closed a sibling gap
+
+Re-tested both scenarios directly against the live `dcardenasl/ci4-api-scaffolding` source
+(`/Users/davidcardenas/Developer/PHP/ci4-platform/ci4-api-scaffolding`):
+
+- `make:crud` with empty `--fields` in non-TTY: **confirmed already fixed** —
+  `MakeCrud.php::gatherFields()` detects `!posix_isatty(STDIN)` and throws a clean
+  `InvalidArgumentException` (exit 1) before ever reaching `CLI::prompt()`. The "Proposed fix"
+  above is stale documentation from before that landed; leaving it here for history.
+- `make:crud` with a **non-empty** `--fields` in non-TTY: could not reproduce the TypeError
+  described above — `gatherFields()` returns immediately via `FieldStringParser::parse()` without
+  touching `CLI::prompt()` when `$fieldsArg !== ''`, so this specific re-verification scenario no
+  longer applies to the current source.
+- **New sibling gap found and fixed:** `make:crud:remove` had the *exact same* unguarded
+  `CLI::prompt('Proceed? …')` call for its delete confirmation — no TTY check at all. Reproduced
+  the identical `TypeError` crash (confirmed no files are deleted before the crash — it fails
+  closed, not silently). Fixed with the same `posix_isatty(STDIN)` guard pattern, requiring
+  `--force` in non-interactive contexts instead of crashing. See package `CHANGELOG.md`
+  ([Unreleased] section). **Not yet published** — `dcardenasl/ci4-api-scaffolding` is consumed via
+  a real GitHub-tagged release, not a path-repository, so the fix lives in the package source only
+  until a new version is tagged and `composer update`'d in the consumer apps.
+
 ## Appendix — how to reproduce
 
 ```bash
