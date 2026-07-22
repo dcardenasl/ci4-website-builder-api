@@ -1,76 +1,45 @@
-# TASKS — ci4-api-starter
+# TASKS — ci4-website-builder-api
 
-> Fuente de verdad para trabajo en este repo.
-> Historial de completadas: ver `TASKS_ARCHIVE.md`.
-> Cross-repo: ver `../TASKS.md`.
-> Última actualización: 2026-05-26 (tracker activo limpio; ver TASKS_ARCHIVE.md)
-
----
+> Fuente de verdad para trabajo abierto en este repositorio.
+> Los entregables cerrados están en [`TASKS_ARCHIVE.md`](TASKS_ARCHIVE.md).
+> Seguimiento cross-repo: [`../TASKS.md`](../TASKS.md).
+> Tracker depurado el 2026-07-21; no se conservan notas de conversación ni bitácoras de participantes.
 
 ## 🔴 En progreso
 
 *(vacío)*
 
----
-
 ## 🟡 Próximo
 
-*(vacío — backlog abajo)*
-
----
-
-## ✅ Completadas (2026-07-11)
-
-- [PHPSTAN-01..08] Remediación completa de PHPStan tras ampliar `paths` a `app/DTO`, `app/Repositories`, `app/Commands`, `app/Support`. El baseline temporal `phpstan-expanded-baseline.neon` (422 errores) se redujo a 0 y fue eliminado — `phpstan.neon` vuelve a incluir solo `phpstan-baseline.neon` (vacío). Cambios:
-  - Bootstrap: `EXIT_SUCCESS`/`EXIT_ERROR` stubbeados en `phpstan-bootstrap.php` (mismo patrón que `app/Config/Constants.php`, excluido del scan).
-  - `ignoreErrors` documentado y acotado a `app/DTO/*` para `property.readOnlyAssignNotInConstructor` / `property.uninitializedReadonly` — falso positivo conocido del patrón `BaseRequestDTO::map()` (ci4-api-core), no un bug de código.
-  - Bug real encontrado y corregido: `ApiSmokeTest`/`IamSmokeTest` importaban `CodeIgniter\Config\Services` (framework) en vez de `Config\Services` (app, con los traits `jwtService()`/`effectivePermissionsResolver()`).
-  - False-safety: ~15 sitios donde `?->getRowArray()`/`->getResultArray()` se llamaban sobre `ResultInterface|false` sin chequeo explícito (nullsafe no protege contra `false`).
-  - `property.nonObject` en `BootstrapSuperadmin`/`FileReferenceRepository`: narrowing con `@var Entity|null` tras `->first()`, mismo patrón ya usado en 20+ sitios del codebase.
-  - ~59 anotaciones `array<string,mixed>` agregadas (DTOs y Commands).
-  - Generics de `BaseConnection<TConnection,TResult>` normalizados en Commands.
-  - Dead code eliminado: `PrepareTestDatabase::ensureMigrationsTable()` (nunca llamado).
-  - Verificado: PHPStan 0 errores, CS-Fixer limpio, 304 tests unitarios + 142 tests feature en verde.
-
----
+*(vacío)*
 
 ## ⚪ Backlog
 
-- [API-012] Docker out-of-the-box — `docker/entrypoint.sh` idempotente ✅ (2026-05-15). Pendiente: orquestación cross-repo en `ci4-kickstart` (coordinada con kickstart v1.1.0+).
+- [ ] **API-012 — Docker out-of-the-box:** validar la orquestación cross-repo en `ci4-kickstart`
+  después de la idempotencia de `docker/entrypoint.sh`.
 
----
+## ⚠️ Señales de activación
 
-## ⚠️ Fuera de alcance / señales
-
-- [API-014] Soporte multi-tenant nativo — decisión registrada en `docs/adr/ADR-011-multi-tenancy-out-of-scope.md`. Reactivar solo si aparece una señal real (tenant con SLA propio, aislamiento físico requerido, etc.).
-- [SEÑAL-API-001] `InvalidChars` global filter rompe con ints en JSON body. CI4 4.7's `InvalidChars::checkEncoding` llama `mb_check_encoding($value, 'UTF-8')` sobre cada hoja recursivamente; cuando el body lleva enteros (p.ej. `{"ids":[1,2]}`) lanza `TypeError`. Workaround actual: cliente debe stringificar (el admin's `FileApiService::bulk*` ya lo hace; documentado en OpenAPI). **Señal de activación:** cuando aparezca un segundo endpoint que reciba arrays de ints o cuando upstream-CI4 publique fix. **Acción:** o (a) PR upstream a CI4 para que `checkEncoding` haga `is_string($value) ? mb_check_encoding(...) : true`, o (b) wrapper local en `Config\Filters` que envuelva el filter.
-- [BACKLOG] Files — endpoints sueltos que el admin llama pero el API aún no expone (post-API-015): `PATCH /files/{id}` (alt_text/caption/credit), `POST /files/{id}/replace`, `POST /files/{id}/regenerate-variants`, `GET /files/{id}/usages`. Crear tareas individuales cuando los necesites.
-
----
+- **API-014 — Multi-tenant nativo:** fuera de alcance mientras no exista una señal real que exija
+  aislamiento físico o un SLA propio.
+- **SEÑAL-API-001 — `InvalidChars` con enteros en JSON:** mantener el workaround documentado hasta
+  que exista un segundo endpoint afectado o una corrección upstream de CI4.
+- **FILES-001 — Endpoints de archivos faltantes:** crear tareas individuales cuando se prioricen
+  `PATCH /files/{id}`, replace, regeneración de variantes o consulta de usages.
 
 ## 🏗️ Contratos de arquitectura
 
-- **DTO-First:** toda entrada y salida de Controllers usa DTOs. Nunca arrays raw.
-- **Services puros:** no conocen HTTP ni `$request`. Reciben DTOs, devuelven DTOs o lanzan excepciones de dominio.
-- **Controllers delgados:** usar `handleRequest()` de `ApiController`. Sin lógica de negocio.
-- **Separador de permisos:** punto `.` (NO `:`). Razón: `Filters::getCleanName()` hace `explode(':')` y trunca silenciosamente.
-- **Rutas por dominio:** `app/Config/Routes/v1/<dominio>.php`.
-- **Tests:** todo endpoint nuevo necesita al menos un test Feature.
-- **CRUD nuevo:** usar `bash vendor/bin/make-crud.sh` siempre. Nunca crear DTOs manualmente.
-- **OpenAPI:** correr `php spark swagger:generate` al terminar cualquier endpoint nuevo.
-- **Migraciones:** nunca modificar migraciones existentes. Nueva migración para cualquier cambio de schema.
+- **DTO-First:** toda entrada y salida de Controller usa DTOs; no arrays raw sin contrato.
+- **Services puros:** no conocen HTTP ni `$request`.
+- **Controllers delgados:** usar `handleRequest()` de `ApiController`.
+- **Permisos:** usar separador `.`; nunca `:`.
+- **Rutas:** organizar endpoints en `app/Config/Routes/v1/<dominio>.php`.
+- **Tests:** todo endpoint nuevo necesita al menos un Feature test.
+- **CRUD nuevo:** preferir `php spark make:crud {Resource} --domain {Domain} --route {slug}`.
+- **OpenAPI:** regenerar Swagger al cerrar cambios de endpoints.
+- **Migraciones:** nunca modificar migraciones existentes; crear una nueva para cada cambio de schema.
 
-### 🚧 Technical Debt (IAM & Models)
-- [x] **Automatic App Inference**: Modify PermissionService::beforeStore to automatically fill application_id using the request's X-App-Key if not provided. ✅ 2026-05-25
-- [x] **Audit Compliance**: Remediate `AuditLogModel` to inherit from `BaseAuditableModel` to ensure automated audit trail consistency. ✅ 2026-05-26
-- [x] **Model Audit Audit**: Perform a full audit of all models in `app/Models` to ensure they either extend `BaseAuditableModel` or are explicitly excluded from auditing. ✅ 2026-05-26
+## 🔧 Referencias
 
-### 🏗️ Technical Debt (Architecture & DTO-First)
-- [x] **Service Layer DTO Audit**: Investigate and refactor Service layer methods currently using raw arrays (`array`) for parameters and return types (e.g., `GalleryService`, `Iam/*Service`). Goal: Replace with typed `readonly` DTOs. ✅ 2026-05-26
-- [x] **DTO-First Enforcement**: Add a static analysis rule (e.g., PHPStan custom rule) to flag usage of `array` as type-hint in `app/Services` to prevent future regressions. ✅ 2026-05-28
-
-### 🛠️ Refactorización (PHPStan)
-- [x] **Fase 1: Core hardening** — Tipar `RepositoryInterface` y `AuditServiceInterface` en `ci4-api-core`.
-- [x] **Fase 2: ApiController Boundary** — Tipar `ApiController` en `ci4-api-core` para eliminar `missingType.iterableValue` del baseline.
-- [x] **Fase 3: Implementación Estricta** — Corregir controladores y servicios en `ci4-api-starter` tras el tipado del core. ✅ 2026-05-26
-- [x] **Fase 4: Scaffolding Generator** — Actualizar plantillas de `ci4-api-scaffolding` para generar código con tipos explícitos. ✅ 2026-05-26
+- Histórico: [`TASKS_ARCHIVE.md`](TASKS_ARCHIVE.md)
+- Tracker global: [`../TASKS.md`](../TASKS.md)

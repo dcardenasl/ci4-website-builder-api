@@ -71,3 +71,20 @@
 ---
 
 *TASKS_ARCHIVE · ci4-api-starter · 2026-05-07*
+
+---
+
+## 📦 Migrado desde `TASKS.md` — 2026-07-21
+
+- **PHPSTAN-01..08** — ampliación de paths, reducción del baseline a cero, correcciones de
+  false-safety, anotaciones de tipos, generics, eliminación de dead code y suites unit/feature en
+  verde.
+- **IAM-001..003** — inferencia automática de `application_id`, auditoría de modelos y
+  cumplimiento de `BaseAuditableModel`.
+- **DTO-001..002** — auditoría de Services que usaban arrays y guardrail de análisis estático para
+  evitar regresiones DTO-first.
+- **CORE-001..004** — hardening de `RepositoryInterface` y `AuditServiceInterface`, boundary tipado
+  de `ApiController`, implementación estricta en el starter y plantillas tipadas del scaffolder.
+
+La orquestación Docker cross-repo permanece abierta como **API-012** en el tracker activo; no se
+considera cerrada por el hecho de que el entrypoint ya sea idempotente.
