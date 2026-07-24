@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-07-23
+
 ### Added
 
 - **`MetricsController::timeseries()` endpoint** — new `GET /api/v1/admin/metrics/timeseries` endpoint for time-bucketed request/error/latency series suitable for trend charts in analytics dashboards; parameters include `interval`, `limit`, and optional `start_date`/`end_date`
