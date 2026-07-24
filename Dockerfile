@@ -24,8 +24,12 @@ FROM php:8.2-apache
 LABEL maintainer="CodeIgniter 4 API Starter"
 LABEL description="Production-ready CI4 API with JWT authentication"
 
-# Install system deps, PHP extensions, and enable Apache modules in one layer
+# Install system deps, PHP extensions, and enable Apache modules in one layer.
+# `apt-get upgrade` first so transitive OS packages pick up any patch released
+# after this base image tag was last rebuilt, instead of trusting whatever was
+# baked in.
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
         git \
         curl \

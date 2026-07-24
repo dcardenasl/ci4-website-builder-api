@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Production Docker image shipped 2 kernel-header HIGH CVEs (CVE-2026-53399, CVE-2026-64600)** — the `php:8.2-apache` base image's `linux-libc-dev` package was behind the Debian patch level; `apt-get upgrade` now runs before `apt-get install` in the image's system-dependency layer so patched OS packages are picked up even when the base image tag itself hasn't been rebuilt.
 - **`MultipartProcessor`** — validate real MIME type (via `fileinfo`) against declared extension to detect spoofing attacks (e.g., `.jpg` with `application/zip` content); logs warning and rejects with `file_mime_mismatch` error
 - **`FileService::destroy()`** — prevent deletion of files with active references (e.g. used by pages, blocks); throws `ConflictException` with resource count
 - **`JwtService`** — enforce required `app.baseURL` configuration via validation and improved error messages with i18n support
