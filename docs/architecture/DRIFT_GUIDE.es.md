@@ -22,5 +22,5 @@ Explicar cómo interpretar y corregir fallos reportados por `composer arch-drift
 
 ## Acción y seguimiento
 1. Agrega tests (unitarios/feature) que cubran el caso corregido.
-2. Actualiza `docs/architecture/README` o el ADR correspondiente si la decisión de arquitectura cambió.
+2. Actualiza `docs/architecture/README.md` o el ADR correspondiente si la decisión de arquitectura cambió.
 3. Referencia esta guía en los PRs donde se toquen controllers/services/filters para demostrar compliance.

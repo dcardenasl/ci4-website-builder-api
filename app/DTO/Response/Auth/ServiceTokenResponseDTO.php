@@ -22,6 +22,9 @@ use OpenApi\Attributes as OA;
 )]
 readonly class ServiceTokenResponseDTO implements DataTransferObjectInterface
 {
+    /**
+     * @param list<string> $scope
+     */
     public function __construct(
         #[OA\Property(property: 'access_token', description: 'Signed JWT (HS256) carrying the application scope', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...')]
         public string $access_token,
@@ -39,6 +42,9 @@ readonly class ServiceTokenResponseDTO implements DataTransferObjectInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(

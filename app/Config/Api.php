@@ -22,7 +22,9 @@ class Api extends \dcardenasl\Ci4ApiCore\Config\Api
         'api/v1/auth/resend-verification',
     ];
 
-    // Stricter auth limits: 3 attempts per hour
-    public int $authRateLimitRequests = 3;
-    public int $authRateLimitWindow = 3600;
+    /**
+     * Keep local development usable while retaining a strict production limit.
+     */
+    public int $authRateLimitRequests = ENVIRONMENT === 'development' ? 20 : 3;
+    public int $authRateLimitWindow = ENVIRONMENT === 'development' ? 300 : 3600;
 }

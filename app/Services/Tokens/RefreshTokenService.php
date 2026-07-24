@@ -24,8 +24,6 @@ readonly class RefreshTokenService implements \App\Interfaces\Tokens\RefreshToke
 {
     use \dcardenasl\Ci4ApiCore\Services\HandlesTransactions;
 
-    private const APPLICATION_ID = 1;
-
     public function __construct(
         protected RefreshTokenModel $refreshTokenModel,
         protected JwtServiceInterface $jwtService,
@@ -84,7 +82,7 @@ readonly class RefreshTokenService implements \App\Interfaces\Tokens\RefreshToke
             $this->userAccountGuard->assertCanAuthenticate($user);
 
             // Generate new access token
-            $permissions = $this->permissionsResolver->resolve((int) $user->id, self::APPLICATION_ID);
+            $permissions = $this->permissionsResolver->resolveAll((int) $user->id);
             $accessToken = $this->jwtService->encode((int) $user->id, $permissions);
 
             return \App\DTO\Response\Identity\TokenResponseDTO::fromArray([

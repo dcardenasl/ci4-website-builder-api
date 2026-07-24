@@ -32,13 +32,13 @@ Signature: `bash bin/make-crud.sh <Resource> <Domain> '<Fields>' [SoftDelete=yes
 
 For interactive prompts: `php spark make:crud Product --domain Catalog`. In non-TTY environments the wrapper is required — shell expansion can eat pipes in `--fields` and the engine hangs waiting for interactive input that never arrives.
 
-The repository ships with a completed example module, `DemoProduct`, under the `Catalog` domain. Review its DTOs, controller, service, and tests as a reference for the architecture contract, and verify any new module with `php spark module:check <Resource> --domain <Domain>`.
+For a maintained, production-shaped reference, inspect the `Files` resource under `app/DTO/*/Files`, `app/Controllers/Api/V1/Files`, `app/Services/Files`, and `tests`. Verify any generated module with `php spark module:check <Resource> --domain <Domain>`.
 
 The command generates migration, entity, model, interface, service, controller, validation, i18n files, OpenAPI placeholders, and tests. It uses a single schema to ensure synchronization across all layers.
 
 ## Quick Start
 
-See [`../GETTING_STARTED.md`](../GETTING_STARTED.md) for a complete walkthrough with code examples.
+See [`../../GETTING_STARTED.md`](../../GETTING_STARTED.md) for a complete walkthrough with code examples.
 
 ## Adding Custom Filters
 

@@ -64,7 +64,7 @@ We don't want to break every existing consumer of the default envelope, but we w
 
 ## Implementation pointers
 
-- Builder + negotiator: `app/Libraries/ApiResponse.php` — methods `problemDetails`, `negotiateError`, `clientPrefersProblemJson`.
+- Builder + negotiator: `vendor/dcardenasl/ci4-api-core/src/Http/ApiResponse.php` — methods `problemDetails`, `negotiateError`, `clientPrefersProblemJson`.
 - Tests: `tests/Unit/Libraries/ApiResponseTest.php` — 6 cases covering the new builders.
 
 ## Future work

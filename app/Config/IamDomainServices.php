@@ -28,7 +28,8 @@ trait IamDomainServices
             static::roleResponseMapper(),
             static::iamAuthorizationService(),
             static::rolePermissionAssignmentService(),
-            static::validation()
+            static::validation(),
+            \Config\Database::connect()
         );
     }
 
@@ -139,7 +140,8 @@ trait IamDomainServices
 
         return new \App\Services\Iam\IamAuthorizationService(
             static::effectivePermissionsResolver(),
-            static::securityAuditLogger()
+            static::securityAuditLogger(),
+            \Config\Database::connect()
         );
     }
 
@@ -164,5 +166,14 @@ trait IamDomainServices
             static::effectivePermissionsResolver(),
             \Config\Database::connect()
         );
+    }
+
+    public static function rolePermissionMatrixService(bool $getShared = true): \App\Services\Iam\RolePermissionMatrixService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('rolePermissionMatrixService');
+        }
+
+        return new \App\Services\Iam\RolePermissionMatrixService(\Config\Database::connect());
     }
 }

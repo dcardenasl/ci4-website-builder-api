@@ -9,6 +9,7 @@ use App\DTO\Request\Iam\PermissionUpdateRequestDTO;
 use App\Entities\PermissionEntity;
 use App\Interfaces\Iam\PermissionServiceInterface;
 use App\Interfaces\Tokens\ApiKeyRepositoryInterface;
+use App\Libraries\Iam\SuperadminPermissionAttacher;
 use CodeIgniter\Validation\ValidationInterface;
 use dcardenasl\Ci4ApiCore\Dto\SecurityContext;
 use dcardenasl\Ci4ApiCore\Http\ApiRequest;
@@ -80,6 +81,12 @@ class PermissionService extends BaseCrudService implements PermissionServiceInte
         new PermissionUpdateRequestDTO($data, $this->validation);
 
         return parent::beforeUpdate($id, $data, $context);
+    }
+
+    protected function afterStore(object $entity, ?SecurityContext $context): void
+    {
+        $permissionId = isset($entity->id) ? (int) $entity->id : 0;
+        (new SuperadminPermissionAttacher())->attach([$permissionId]);
     }
 
     protected function beforeDelete(int $id, ?SecurityContext $context): void

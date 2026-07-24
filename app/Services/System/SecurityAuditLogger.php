@@ -44,6 +44,7 @@ class SecurityAuditLogger implements SecurityAuditLoggerInterface
         $this->safeLog($action, 'authorization', null, [], $payload, $context, 'denied', 'critical');
     }
 
+    /** @phpstan-ignore dtoFirst.arrayParameter */
     public function logAuthorizationDeniedFromContext(string $action, array $details, ?SecurityContext $context): void
     {
         $this->safeLog($action, 'authorization', null, [], $details, $context, 'denied', 'critical');
@@ -89,6 +90,10 @@ class SecurityAuditLogger implements SecurityAuditLoggerInterface
         );
     }
 
+    /**
+     * @param array<string, mixed> $oldValues
+     * @param array<string, mixed> $newValues
+     */
     private function safeLog(
         string $action,
         string $entityType,

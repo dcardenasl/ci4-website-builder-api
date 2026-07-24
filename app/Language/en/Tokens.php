@@ -23,6 +23,9 @@ return [
     'tokenDecodeFailed'            => 'Token could not be decoded',
     'missingRequiredClaims'        => 'Token missing required claims (jti, exp)',
 
+    // Configuration
+    'issuerRequired'        => 'JWT issuer (baseURL) is required. This is usually set via app.baseURL in .env',
+
     // General
     'invalidRequest'        => 'Invalid request',
     'notFound'              => 'Not found',

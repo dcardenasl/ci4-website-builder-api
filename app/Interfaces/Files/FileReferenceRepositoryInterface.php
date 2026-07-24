@@ -20,7 +20,7 @@ interface FileReferenceRepositoryInterface
     /**
      * Return all references pointing at a given file.
      *
-     * @return array<array{resource: string, resource_id: int, label: string|null, role: string}>
+     * @return array<array{source: string, resource: string, resource_id: int, label: string|null, role: string}>
      */
     public function getByFileId(int $fileId): array;
 }

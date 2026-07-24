@@ -28,8 +28,15 @@ class FileServiceTest extends CIUnitTestCase
 
     protected FileService $service;
     protected FileRepositoryInterface $mockFileRepository;
+    protected \App\Interfaces\Files\FileReferenceRepositoryInterface $mockFileReferenceRepository;
     protected StorageManager $mockStorage;
+    protected \App\Libraries\Files\StorageKeyGenerator $mockStorageKeyGenerator;
     protected AuditServiceInterface $mockAuditService;
+    protected \App\Interfaces\Files\FilePolicyServiceInterface $mockFilePolicy;
+    protected \App\Interfaces\Files\VirusScannerServiceInterface $mockVirusScanner;
+    protected bool $virusScannerResult = true;
+    /** @var array{variants: array<string, array<string, mixed>>, dimensions: array{width: int|null, height: int|null}} */
+    protected array $variantResult = ['variants' => [], 'dimensions' => ['width' => null, 'height' => null]];
 
     protected function setUp(): void
     {
@@ -40,27 +47,54 @@ class FileServiceTest extends CIUnitTestCase
         $this->mockFileRepository->method('getModel')->willReturn($mockFileModel);
 
         $this->mockStorage = $this->createMock(StorageManager::class);
+        $this->mockStorageKeyGenerator = $this->createMock(\App\Libraries\Files\StorageKeyGenerator::class);
+        $this->mockStorageKeyGenerator
+            ->method('generate')
+            ->willReturnCallback(static fn (string $extension, ?string $contentHash = null): string => sprintf(
+                'stored-opaque.%s',
+                strtolower($extension)
+            ));
         $this->mockAuditService = $this->createMock(AuditServiceInterface::class);
+        $this->mockFilePolicy = $this->createMock(\App\Interfaces\Files\FilePolicyServiceInterface::class);
+        $this->mockFilePolicy->method('resolveUploadVisibility')->willReturn('private');
+        $this->mockFilePolicy->method('shouldScopeListingsToOwner')->willReturn(true);
+        $this->mockFilePolicy->method('canBypassOwnershipForRead')->willReturn(false);
+        $this->mockFilePolicy->method('canAccessFile')->willReturnCallback(
+            static fn (\App\Entities\FileEntity $file, int $userId): bool => (int) $file->user_id === $userId
+        );
 
-        // Inject real processors and generator as they are mostly stateless and hard to mock without overhead
+        // Inject real processors and a deterministic storage key generator.
         $responseMapper = new \dcardenasl\Ci4ApiCore\Mappers\DtoResponseMapper(
             \App\DTO\Response\Files\FileResponseDTO::class
         );
 
         $mockVariantProcessor = $this->createMock(\App\Libraries\Files\ImageVariantProcessor::class);
         $mockVariantProcessor->method('generate')
-            ->willReturn(['variants' => [], 'dimensions' => ['width' => null, 'height' => null]]);
+            ->willReturnCallback(fn (): array => $this->variantResult);
+        $this->mockVirusScanner = $this->createMock(\App\Interfaces\Files\VirusScannerServiceInterface::class);
+        $this->mockVirusScanner->method('isSafe')->willReturnCallback(fn (): bool => $this->virusScannerResult);
+        $this->mockFileReferenceRepository = $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class);
+
+        $binaryIngestion = new \App\Services\Files\FileBinaryIngestor(
+            $this->mockFileRepository,
+            $responseMapper,
+            $this->mockStorage,
+            $this->mockStorageKeyGenerator,
+            new \App\Libraries\Files\MultipartProcessor(),
+            new \App\Libraries\Files\Base64Processor(),
+            $mockVariantProcessor,
+            $this->mockVirusScanner,
+        );
 
         $this->service = new FileService(
             $this->mockFileRepository,
             $responseMapper,
             $this->mockStorage,
             $this->mockAuditService,
-            new \App\Libraries\Files\FilenameGenerator($this->mockStorage),
-            new \App\Libraries\Files\MultipartProcessor(),
-            new \App\Libraries\Files\Base64Processor(),
             $mockVariantProcessor,
-            $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class),
+            $this->mockFileReferenceRepository,
+            $this->mockFilePolicy,
+            $binaryIngestion,
         );
     }
 
@@ -137,6 +171,7 @@ class FileServiceTest extends CIUnitTestCase
         // Create a real temp file so file_get_contents works
         $tempFile = tempnam(sys_get_temp_dir(), 'upload_test_');
         file_put_contents($tempFile, 'fake file contents');
+        $datePath = date('Y/m/d');
 
         $mockFile = $this->createMockUploadedFile([
             'tempName' => $tempFile,
@@ -158,21 +193,31 @@ class FileServiceTest extends CIUnitTestCase
 
         $this->mockStorage
             ->method('url')
-            ->willReturn('http://localhost/uploads/2026/02/17/photo_abc123.jpg');
+            ->willReturn("http://localhost/uploads/{$datePath}/stored-opaque.jpg");
 
         // Mock FileRepository
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('insert')
+            ->with($this->callback(static function (array $data): bool {
+                return ($data['category'] ?? null) === 'image'
+                    && ($data['mime_type'] ?? null) === 'image/jpeg'
+                    && ($data['original_name'] ?? null) === 'photo.jpg'
+                    && ($data['stored_name'] ?? null) === 'stored-opaque.jpg';
+            }))
+            ->willReturn(1);
+
         $savedEntity = $this->createFileEntity([
             'id' => 1,
             'original_name' => 'photo.jpg',
             'size' => 1024,
             'mime_type' => 'image/jpeg',
-            'url' => 'http://localhost/uploads/2026/02/17/photo_abc123.jpg',
+            'category' => 'image',
+            'stored_name' => 'stored-opaque.jpg',
+            'path' => "{$datePath}/stored-opaque.jpg",
+            'url' => "http://localhost/uploads/{$datePath}/stored-opaque.jpg",
             'uploaded_at' => date('Y-m-d H:i:s'),
         ]);
-
-        $this->mockFileRepository
-            ->method('insert')
-            ->willReturn(1);
 
         $this->mockFileRepository
             ->method('find')
@@ -267,6 +312,34 @@ class FileServiceTest extends CIUnitTestCase
         ], service('validation')));
 
         @unlink($tempFile);
+    }
+
+    public function testUploadRollsBackStorageWhenRepositoryInsertThrows(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'upload_throw_');
+        $this->assertIsString($tempFile);
+        file_put_contents($tempFile, 'throwing insert contents');
+
+        $this->mockStorage->method('put')->willReturn(true);
+        $this->mockStorage->expects($this->once())->method('delete');
+        $this->mockFileRepository->method('insert')->willThrowException(new \RuntimeException('insert failed'));
+
+        try {
+            $this->service->upload(new \App\DTO\Request\Files\FileUploadRequestDTO([
+                'file' => $this->createMockUploadedFile([
+                    'tempName' => $tempFile,
+                    'name' => 'throw.pdf',
+                    'extension' => 'pdf',
+                    'mime_type' => 'application/pdf',
+                ]),
+                'user_id' => 1,
+            ], service('validation')));
+            $this->fail('The repository exception must escape after compensation.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('insert failed', $exception->getMessage());
+        } finally {
+            @unlink($tempFile);
+        }
     }
 
     // ==================== INDEX TESTS ====================
@@ -446,6 +519,31 @@ class FileServiceTest extends CIUnitTestCase
         $this->assertTrue($result);
     }
 
+    public function testDestroyFileInUseThrowsConflictException(): void
+    {
+        $file = $this->createFileEntity([
+            'id' => 1,
+            'user_id' => 1,
+            'path' => '2024/01/01/file.jpg',
+        ]);
+
+        $this->mockFileRepository
+            ->method('find')
+            ->willReturn($file);
+
+        $this->mockFileReferenceRepository
+            ->expects($this->once())
+            ->method('getByFileId')
+            ->with(1)
+            ->willReturn([
+                ['resource' => 'pages', 'resource_id' => 10, 'role' => 'background'],
+            ]);
+
+        $this->expectException(\dcardenasl\Ci4ApiCore\Exceptions\ConflictException::class);
+
+        $this->service->destroy(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+    }
+
     public function testForceDestroyPurgesTrashedFile(): void
     {
         // Pre-condition: file must be in the trash (`deleted_at` set). Service
@@ -543,23 +641,15 @@ class FileServiceTest extends CIUnitTestCase
         $this->service->restore(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
     }
 
-    public function testUploadWithDuplicateFilenameGeneratesNumericSeries(): void
+    public function testUploadGeneratesOpaqueStorageKeyWithoutCollisionChecks(): void
     {
         $filename = 'logo.png';
         $datePath = date('Y/m/d');
 
-        // Mock Storage to simulate existing file for 'logo.png' but NOT for 'logo_1.png'
-        $this->mockStorage
-            ->method('exists')
-            ->willReturnMap([
-                ["{$datePath}/logo.png", true],   // First check: exists
-                ["{$datePath}/logo_1.png", false] // Second check: doesn't exist
-            ]);
-
         $this->mockStorage
             ->expects($this->once())
             ->method('put')
-            ->with($this->equalTo("{$datePath}/logo_1.png"), $this->anything())
+            ->with($this->equalTo("{$datePath}/stored-opaque.png"), $this->anything())
             ->willReturn(true);
 
         $this->mockStorage
@@ -568,18 +658,28 @@ class FileServiceTest extends CIUnitTestCase
 
         $this->mockStorage
             ->method('url')
-            ->willReturn("http://localhost/uploads/{$datePath}/logo_1.png");
+            ->willReturn("http://localhost/uploads/{$datePath}/stored-opaque.png");
 
         $savedEntity = $this->createFileEntity([
             'id' => 1,
             'original_name' => $filename,
-            'stored_name' => 'logo_1.png',
+            'stored_name' => 'stored-opaque.png',
             'mime_type' => 'image/png',
-            'url' => "http://localhost/uploads/{$datePath}/logo_1.png",
+            'category' => 'image',
+            'path' => "{$datePath}/stored-opaque.png",
+            'url' => "http://localhost/uploads/{$datePath}/stored-opaque.png",
             'uploaded_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $this->mockFileRepository->method('insert')->willReturn(1);
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('insert')
+            ->with($this->callback(static function (array $data): bool {
+                return ($data['category'] ?? null) === 'image'
+                    && ($data['stored_name'] ?? null) === 'stored-opaque.png'
+                    && ($data['original_name'] ?? null) === 'logo.png';
+            }))
+            ->willReturn(1);
         $this->mockFileRepository->method('find')->willReturn($savedEntity);
 
         $tempFile = tempnam(sys_get_temp_dir(), 'upload_test_');
@@ -600,16 +700,12 @@ class FileServiceTest extends CIUnitTestCase
         @unlink($tempFile);
     }
 
-    public function testUploadWithUploadPrefixCleansFilename(): void
+    public function testUploadPreservesUploadPrefixInOriginalName(): void
     {
         $base64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
         // Simulating the dirty name reported by the user
         $dirtyFilename = 'upload_699e505bebdf92.24327053_Captura09.PNG';
         $datePath = date('Y/m/d');
-
-        $this->mockStorage
-            ->method('exists')
-            ->willReturn(false); // No collision
 
         $this->mockStorage
             ->expects($this->once())
@@ -618,14 +714,22 @@ class FileServiceTest extends CIUnitTestCase
 
         $savedEntity = $this->createFileEntity([
             'id' => 1,
-            'original_name' => 'Captura09.PNG',
-            'stored_name' => 'Captura09.png',
+            'original_name' => $dirtyFilename,
+            'stored_name' => 'stored-opaque.png',
             'mime_type' => 'image/png',
-            'url' => "http://localhost/uploads/{$datePath}/Captura09.png",
+            'path' => "{$datePath}/stored-opaque.png",
+            'url' => "http://localhost/uploads/{$datePath}/stored-opaque.png",
             'uploaded_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $this->mockFileRepository->method('insert')->willReturn(1);
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('insert')
+            ->with($this->callback(static function (array $data) use ($dirtyFilename): bool {
+                return ($data['original_name'] ?? null) === $dirtyFilename
+                    && ($data['stored_name'] ?? null) === 'stored-opaque.png';
+            }))
+            ->willReturn(1);
         $this->mockFileRepository->method('find')->willReturn($savedEntity);
 
         $result = $this->service->upload(new \App\DTO\Request\Files\FileUploadRequestDTO([
@@ -635,9 +739,10 @@ class FileServiceTest extends CIUnitTestCase
         ], service('validation')));
 
         $this->assertInstanceOf(\App\DTO\Response\Files\FileResponseDTO::class, $result);
+        $this->assertSame($dirtyFilename, $result->toArray()['original_name']);
     }
 
-    public function testUploadWithHexHashPrefixCleansFilename(): void
+    public function testUploadPreservesHexHashPrefixInOriginalName(): void
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'upload_test_');
         file_put_contents($tempFile, 'fake file contents');
@@ -655,24 +760,28 @@ class FileServiceTest extends CIUnitTestCase
         ]);
 
         $this->mockStorage
-            ->method('exists')
-            ->willReturn(false);
-
-        $this->mockStorage
             ->expects($this->once())
             ->method('put')
             ->willReturn(true);
 
         $savedEntity = $this->createFileEntity([
             'id' => 1,
-            'original_name' => 'Captura02.PNG',
-            'stored_name' => 'Captura02.png',
+            'original_name' => $dirtyFilename,
+            'stored_name' => 'stored-opaque.png',
             'mime_type' => 'image/png',
-            'url' => "http://localhost/uploads/{$datePath}/Captura02.png",
+            'path' => "{$datePath}/stored-opaque.png",
+            'url' => "http://localhost/uploads/{$datePath}/stored-opaque.png",
             'uploaded_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $this->mockFileRepository->method('insert')->willReturn(1);
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('insert')
+            ->with($this->callback(static function (array $data) use ($dirtyFilename): bool {
+                return ($data['original_name'] ?? null) === $dirtyFilename
+                    && ($data['stored_name'] ?? null) === 'stored-opaque.png';
+            }))
+            ->willReturn(1);
         $this->mockFileRepository->method('find')->willReturn($savedEntity);
 
         $result = $this->service->upload(new \App\DTO\Request\Files\FileUploadRequestDTO([
@@ -681,6 +790,237 @@ class FileServiceTest extends CIUnitTestCase
         ], service('validation')));
 
         $this->assertInstanceOf(\App\DTO\Response\Files\FileResponseDTO::class, $result);
+        $this->assertSame($dirtyFilename, $result->toArray()['original_name']);
+        @unlink($tempFile);
+    }
+
+    public function testReplacePersistsMimeDerivedCategory(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'replace_test_');
+        file_put_contents($tempFile, 'replacement contents');
+        $datePath = date('Y/m/d');
+
+        $existing = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'original_name' => 'old.pdf',
+            'stored_name' => 'stored-old.pdf',
+            'mime_type' => 'application/pdf',
+            'path' => "{$datePath}/stored-old.pdf",
+            'url' => "http://localhost/uploads/{$datePath}/stored-old.pdf",
+            'category' => 'document',
+        ]);
+
+        $mockFile = $this->createMockUploadedFile([
+            'tempName' => $tempFile,
+            'name' => 'brand-new.png',
+            'extension' => 'png',
+            'mime_type' => 'image/png',
+            'size' => 128,
+        ]);
+
+        $this->mockStorage
+            ->method('put')
+            ->willReturn(true);
+
+        $this->mockStorage
+            ->method('getDriverName')
+            ->willReturn('local');
+
+        $this->mockStorage
+            ->method('url')
+            ->willReturn("http://localhost/uploads/{$datePath}/stored-opaque.png");
+
+        $this->mockFileRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(7, $this->callback(static function (array $data): bool {
+                return ($data['category'] ?? null) === 'image'
+                    && ($data['mime_type'] ?? null) === 'image/png'
+                    && ($data['original_name'] ?? null) === 'brand-new.png';
+            }))
+            ->willReturn(true);
+
+        $updated = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'original_name' => 'brand-new.png',
+            'stored_name' => 'stored-opaque.png',
+            'mime_type' => 'image/png',
+            'path' => "{$datePath}/stored-opaque.png",
+            'url' => "http://localhost/uploads/{$datePath}/stored-opaque.png",
+            'category' => 'image',
+        ]);
+
+        $this->mockFileRepository
+            ->method('find')
+            ->willReturn($existing, $updated);
+
+        $result = $this->service->replace(7, new \App\DTO\Request\Files\FileUploadRequestDTO([
+            'file' => $mockFile,
+            'user_id' => 1,
+        ], service('validation')), new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+
+        $this->assertInstanceOf(\App\DTO\Response\Files\FileResponseDTO::class, $result);
+        $this->assertSame('image', $result->toArray()['category']);
+        @unlink($tempFile);
+    }
+
+    public function testReplaceRejectsMalwareBeforeWritingToStorage(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'replace_malware_');
+        $this->assertIsString($tempFile);
+        file_put_contents($tempFile, 'malicious replacement contents');
+
+        $existing = $this->createFileEntity([
+            'id'            => 7,
+            'user_id'       => 1,
+            'original_name' => 'old.pdf',
+            'stored_name'   => 'stored-old.pdf',
+            'mime_type'     => 'application/pdf',
+            'path'          => '2026/07/10/stored-old.pdf',
+            'url'           => 'http://localhost/uploads/2026/07/10/stored-old.pdf',
+            'category'      => 'document',
+        ]);
+
+        $mockFile = $this->createMockUploadedFile([
+            'tempName'  => $tempFile,
+            'name'      => 'infected.pdf',
+            'extension' => 'pdf',
+            'mime_type' => 'application/pdf',
+            'size'      => 30,
+        ]);
+
+        $this->mockFileRepository->method('find')->willReturn($existing);
+        $this->virusScannerResult = false;
+        $this->mockStorage->expects($this->never())->method('put');
+        $this->mockFileRepository->expects($this->never())->method('update');
+
+        try {
+            $this->service->replace(7, new \App\DTO\Request\Files\FileUploadRequestDTO([
+                'file'    => $mockFile,
+                'user_id' => 1,
+            ], service('validation')), new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+
+            $this->fail('Malware replacement must be rejected.');
+        } catch (BadRequestException $exception) {
+            $this->assertSame(lang('Files.malware_detected'), $exception->getMessage());
+        } finally {
+            @unlink($tempFile);
+        }
+    }
+
+    public function testReplaceRollsBackNewObjectsWhenMetadataUpdateFails(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'replace_rollback_');
+        $this->assertIsString($tempFile);
+        file_put_contents($tempFile, 'replacement contents');
+        $datePath = date('Y/m/d');
+
+        $existing = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'path' => 'old/original.pdf',
+            'variants' => null,
+        ]);
+        $this->mockFileRepository->method('find')->willReturn($existing);
+        $this->mockFileRepository->method('update')->willReturn(false);
+        $this->mockFileRepository->method('errors')->willReturn(['file' => 'update failed']);
+        $this->mockStorage->method('put')->willReturn(true);
+        $this->mockStorage->expects($this->once())->method('delete')->with("{$datePath}/stored-opaque.pdf");
+
+        $this->expectException(ValidationException::class);
+        try {
+            $this->service->replace(7, new \App\DTO\Request\Files\FileUploadRequestDTO([
+                'file' => $this->createMockUploadedFile([
+                    'tempName' => $tempFile,
+                    'name' => 'replacement.pdf',
+                    'extension' => 'pdf',
+                    'mime_type' => 'application/pdf',
+                ]),
+                'user_id' => 1,
+            ], service('validation')), new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+        } finally {
+            @unlink($tempFile);
+        }
+    }
+
+    public function testReplaceRetiresOldOriginalAndVariantsAfterMetadataSucceeds(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'replace_retire_');
+        $this->assertIsString($tempFile);
+        file_put_contents($tempFile, 'replacement contents');
+        $datePath = date('Y/m/d');
+        $existing = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'path' => 'old/original.pdf',
+            'variants' => ['thumb' => ['path' => 'old/original_thumb.webp']],
+        ]);
+        $updated = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'path' => "{$datePath}/stored-opaque.pdf",
+            'original_name' => 'replacement.pdf',
+            'mime_type' => 'application/pdf',
+        ]);
+
+        $this->mockFileRepository->method('find')->willReturn($existing, $updated);
+        $this->mockFileRepository->method('update')->willReturn(true);
+        $this->mockStorage->method('put')->willReturn(true);
+        $this->mockStorage->expects($this->exactly(2))->method('delete')->willReturnCallback(
+            static fn (string $path): bool => in_array($path, ['old/original.pdf', 'old/original_thumb.webp'], true),
+        );
+
+        $result = $this->service->replace(7, new \App\DTO\Request\Files\FileUploadRequestDTO([
+            'file' => $this->createMockUploadedFile([
+                'tempName' => $tempFile,
+                'name' => 'replacement.pdf',
+                'extension' => 'pdf',
+                'mime_type' => 'application/pdf',
+            ]),
+            'user_id' => 1,
+        ], service('validation')), new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+
+        $this->assertSame('replacement.pdf', $result->original_name);
+        @unlink($tempFile);
+    }
+
+    public function testReplaceDoesNotDeleteObjectWhenContentKeyMatchesExistingPath(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'replace_same_');
+        $this->assertIsString($tempFile);
+        file_put_contents($tempFile, 'same contents');
+        $samePath = date('Y/m/d') . '/stored-opaque.pdf';
+        $existing = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'path' => $samePath,
+            'variants' => null,
+        ]);
+        $updated = $this->createFileEntity([
+            'id' => 7,
+            'user_id' => 1,
+            'path' => $samePath,
+            'original_name' => 'same.pdf',
+            'mime_type' => 'application/pdf',
+        ]);
+
+        $this->mockFileRepository->method('find')->willReturn($existing, $updated);
+        $this->mockFileRepository->method('update')->willReturn(true);
+        $this->mockStorage->method('put')->willReturn(true);
+        $this->mockStorage->expects($this->never())->method('delete');
+
+        $this->service->replace(7, new \App\DTO\Request\Files\FileUploadRequestDTO([
+            'file' => $this->createMockUploadedFile([
+                'tempName' => $tempFile,
+                'name' => 'same.pdf',
+                'extension' => 'pdf',
+                'mime_type' => 'application/pdf',
+            ]),
+            'user_id' => 1,
+        ], service('validation')), new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+
         @unlink($tempFile);
     }
 

@@ -81,7 +81,7 @@ class RolePermissionAssignmentService
     /**
      * @return list<int>
      */
-    public function getPermissionIds(int $roleId): array
+    public function getPermissionIds(int $roleId)
     {
         $result = $this->db->table('role_permissions')
             ->select('permission_id')

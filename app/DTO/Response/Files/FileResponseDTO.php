@@ -28,7 +28,7 @@ readonly class FileResponseDTO implements DataTransferObjectInterface
         public int $id,
         #[OA\Property(property: 'original_name', description: 'Original filename', example: 'document.pdf')]
         public string $original_name,
-        #[OA\Property(description: 'Stored filename', example: 'abc123_document.pdf')]
+        #[OA\Property(description: 'Opaque stored filename/key', example: 'f8c0d1e2f3a4-9b8c7d6e.pdf')]
         public string $filename,
         #[OA\Property(property: 'mime_type', description: 'MIME type', example: 'application/pdf')]
         public string $mime_type,
@@ -72,6 +72,13 @@ readonly class FileResponseDTO implements DataTransferObjectInterface
         // Handle case where we receive an entity array or raw data
         $size = (int) ($data['file_size'] ?? $data['size'] ?? 0);
         $mime = (string) ($data['mime_type'] ?? '');
+        $derivedCategory = self::categoryFromMime($mime);
+        $category = (string) ($data['category'] ?? '');
+        if ($derivedCategory !== 'document') {
+            $category = $derivedCategory;
+        } elseif ($category === '') {
+            $category = $derivedCategory;
+        }
         $is_image = str_starts_with($mime, 'image/');
 
         $variants = $data['variants'] ?? null;
@@ -84,7 +91,7 @@ readonly class FileResponseDTO implements DataTransferObjectInterface
             original_name: (string) ($data['original_name'] ?? ''),
             filename: (string) ($data['filename'] ?? $data['stored_name'] ?? ''),
             mime_type: $mime,
-            category: (string) ($data['category'] ?? self::categoryFromMime($mime)),
+            category: $category,
             file_size: $size,
             human_size: (string) ($data['human_size'] ?? self::calculateHumanSize($size)),
             is_image: (bool) ($data['is_image'] ?? $is_image),

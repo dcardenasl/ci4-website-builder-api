@@ -18,6 +18,7 @@ return [
     'upload_failed'       => 'Error al subir el archivo: {0}',
     'file_too_large'       => 'El tamaño del archivo excede el máximo permitido',
     'invalid_file_type'    => 'Tipo de archivo no permitido',
+    'file_mime_mismatch'   => 'El contenido del archivo no coincide con su extensión',
     'storage_failed'      => 'Error al almacenar el archivo',
     'file_not_found'       => 'Archivo no encontrado o acceso denegado',
     'id_required'         => 'El ID del archivo es obligatorio',
@@ -43,7 +44,7 @@ return [
     'bulk_item_failed' => 'La operación falló para este archivo',
 
     // Referencias de archivos
-    'in_use' => 'No es posible eliminar permanentemente: este archivo es referenciado por {0} recurso(s). Desvincularlo primero.',
+    'in_use' => 'No es posible eliminar: este archivo es referenciado por {0} recurso(s). Desvincularlo primero.',
 
     // Generación de variantes
     'not_an_image'       => 'La generación de variantes solo está disponible para archivos de imagen.',
@@ -55,4 +56,8 @@ return [
 
     // Reemplazo
     'replace_success' => 'Archivo reemplazado exitosamente.',
+
+    // Hash de stream
+    'hash_stream_invalid' => 'Se esperaba un stream legible para el hash del archivo.',
+    'hash_stream_failed' => 'Error al hacer hash del archivo subido.',
 ];

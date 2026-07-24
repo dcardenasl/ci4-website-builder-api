@@ -68,7 +68,7 @@ Antes de este ADR, ningún endpoint del kit honraba el header. Un reintento crea
 ## Punteros de implementación
 
 - Migración: `app/Database/Migrations/2026-05-06-100000_CreateIdempotencyKeysTable.php`.
-- Filter: `app/Filters/IdempotencyFilter.php`. Alias `idempotency` en `Config\Filters::$aliases`.
+- Filter: `vendor/dcardenasl/ci4-api-core/src/Http/Filters/IdempotencyFilter.php`. Alias `idempotency` en `Config\Filters::$aliases`.
 - Tests: `tests/Feature/Filters/IdempotencyFilterTest.php` — cubre la matriz completa de comportamiento, 6 casos.
 
 ## Trabajo futuro

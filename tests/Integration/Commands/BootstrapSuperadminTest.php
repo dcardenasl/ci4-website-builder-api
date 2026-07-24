@@ -48,8 +48,8 @@ final class BootstrapSuperadminTest extends IntegrationTestCase
     public function testSecondRunIsIdempotentAndDoesNotCreateAnotherSuperadmin(): void
     {
         $firstOutput = $this->runCommand('users:bootstrap-superadmin', [
-            'email'      => 'first.superadmin@example.com',
-            'password'   => 'StrongPass123!',
+            'email'      => 'first.owner@test.example',
+            'password'   => 'TestPass456!',
             'first-name' => 'First',
             'last-name'  => 'Superadmin',
         ]);
@@ -64,8 +64,8 @@ final class BootstrapSuperadminTest extends IntegrationTestCase
             ->countAllResults();
 
         $secondOutput = $this->runCommand('users:bootstrap-superadmin', [
-            'email'    => 'second.superadmin@example.com',
-            'password' => 'StrongPass123!',
+            'email'    => 'second.owner@test.example',
+            'password' => 'TestPass456!',
         ]);
 
         $this->assertStringContainsString('A superadmin already exists. Bootstrap can only run once.', $secondOutput);
@@ -75,6 +75,6 @@ final class BootstrapSuperadminTest extends IntegrationTestCase
             ->countAllResults();
 
         $this->assertSame($beforeSecondRun, $afterSecondRun, 'Second run must not assign superadmin role to a new user.');
-        $this->dontSeeInDatabase('users', ['email' => 'second.superadmin@example.com']);
+        $this->dontSeeInDatabase('users', ['email' => 'second.owner@test.example']);
     }
 }

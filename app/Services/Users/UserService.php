@@ -72,12 +72,12 @@ class UserService extends BaseCrudService implements UserServiceInterface
     /**
      * Approve a pending user
      */
-    public function approve(int $id, ?SecurityContext $context = null, ?string $clientBaseUrl = null): \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface
+    public function approve(int $id, ?SecurityContext $context = null, ?string $clientBaseUrl = null, ?string $locale = null): \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface
     {
         $this->authz->assertCanModifySubject($context, $id);
 
-        return $this->wrapInTransaction(function () use ($id, $context, $clientBaseUrl) {
-            $approvedUser = $this->approveUserAction->execute($id, $context, $clientBaseUrl);
+        return $this->wrapInTransaction(function () use ($id, $context, $clientBaseUrl, $locale) {
+            $approvedUser = $this->approveUserAction->execute($id, $context, $clientBaseUrl, $locale);
 
             return $this->mapToResponse($approvedUser);
         });

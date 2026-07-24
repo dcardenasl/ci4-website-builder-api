@@ -33,7 +33,7 @@ The DTO-first contract is enforced by `make:crud` scaffolding — generated code
 
 ## Getting Started
 
-The fastest path is the **interactive bootstrapper** — a single command that clones the template, generates all secrets, creates both databases, runs migrations, and provisions the first superadmin:
+The fastest path is the **interactive bootstrapper** — a single command that clones the template, generates all secrets, creates both databases (`ci4_website_builder_api` and `ci4_website_builder_api_test`), runs migrations, and provisions the first superadmin:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dcardenasl/ci4-api-starter/main/install.sh)"
@@ -59,7 +59,7 @@ composer install
 cp .env.example .env
 # Fill in DB credentials and JWT_SECRET_KEY in .env
 php spark migrate
-php spark users:bootstrap-superadmin --email superadmin@example.com --password 'StrongPass123!' --first-name Super --last-name Admin
+php spark users:bootstrap-superadmin --email admin@example.com --password 'ChangeMe123!' --first-name Admin --last-name User
 ```
 
 > For Docker workflows: `docker compose up -d` is enough — the entrypoint generates secrets, runs migrations, and seeds RBAC on first start. Then `docker compose exec app php spark users:bootstrap-superadmin --email <e> --password <p>` to create the first user. See `GETTING_STARTED.md` for details.

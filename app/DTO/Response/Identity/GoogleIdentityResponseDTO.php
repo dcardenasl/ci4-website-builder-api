@@ -20,6 +20,9 @@ use OpenApi\Attributes as OA;
 )]
 readonly class GoogleIdentityResponseDTO implements DataTransferObjectInterface
 {
+    /**
+     * @param array<string, mixed> $claims
+     */
     public function __construct(
         #[OA\Property(description: 'Identity provider', example: 'google')]
         public string $provider,
@@ -38,6 +41,9 @@ readonly class GoogleIdentityResponseDTO implements DataTransferObjectInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(

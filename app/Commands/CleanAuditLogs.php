@@ -25,7 +25,12 @@ class CleanAuditLogs extends BaseCommand
         $retentionDays = isset($params[0]) ? (int) $params[0] : $configuredDays;
         $retentionDays = max(1, $retentionDays);
 
-        $cutoff = date('Y-m-d H:i:s', strtotime("-{$retentionDays} days"));
+        $cutoffTimestamp = strtotime("-{$retentionDays} days");
+        if ($cutoffTimestamp === false) {
+            CLI::error("Could not compute a cutoff date for retention window: {$retentionDays} days.");
+            return;
+        }
+        $cutoff = date('Y-m-d H:i:s', $cutoffTimestamp);
 
         $model = model(AuditLogModel::class);
         $deleted = $model->where('created_at <', $cutoff)->delete();

@@ -15,7 +15,7 @@ services:
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:8080}
       - DB_HOST=db
       - DB_PORT=3306
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-ci4_api}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-ci4_website_builder_api}
       - MYSQL_USER=${MYSQL_USER:-ci4_user}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-ci4_dev_password}
     volumes:
@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-ci4_root_password}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-ci4_api}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ci4_website_builder_api}
       MYSQL_USER: ${MYSQL_USER:-ci4_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ci4_dev_password}
     ports:

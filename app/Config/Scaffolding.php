@@ -12,7 +12,7 @@ class Scaffolding extends BaseScaffoldingConfig
     public function build(): ScaffoldingConfig
     {
         return ScaffoldingConfig::defaults(
-            protectedRouteFilters: ['jwtauth', 'permission:iam.superadmin-access', 'throttle'],
+            protectedRouteFilters: ['jwtauth', 'throttle'],
         );
     }
 }

@@ -57,14 +57,14 @@ interface FileServiceInterface
      *
      * @return array<array{resource: string, resource_id: int, label: string|null, role: string}>
      */
-    public function getUsages(int $id, ?SecurityContext $context = null): array;
+    public function getUsages(int $id, ?SecurityContext $context = null);
 
     /**
      * Delete existing image variants and regenerate them from the stored original.
      *
      * @return array<string, array{path: string, url: string, width: int, height: int}>
      */
-    public function regenerateVariants(int $id, ?SecurityContext $context = null): array;
+    public function regenerateVariants(int $id, ?SecurityContext $context = null);
 
     /**
      * Replace a file's binary content. Preserves the record ID, user ownership,
@@ -85,17 +85,17 @@ interface FileServiceInterface
      * @param list<int> $ids
      * @return list<array{id:int, ok:bool, error?:string}>
      */
-    public function bulkDestroy(array $ids, ?SecurityContext $context = null): array;
+    public function bulkDestroy($ids, ?SecurityContext $context = null);
 
     /**
      * @param list<int> $ids
      * @return list<array{id:int, ok:bool, error?:string}>
      */
-    public function bulkRestore(array $ids, ?SecurityContext $context = null): array;
+    public function bulkRestore($ids, ?SecurityContext $context = null);
 
     /**
      * @param list<int> $ids
      * @return list<array{id:int, ok:bool, error?:string}>
      */
-    public function bulkForceDestroy(array $ids, ?SecurityContext $context = null): array;
+    public function bulkForceDestroy($ids, ?SecurityContext $context = null);
 }

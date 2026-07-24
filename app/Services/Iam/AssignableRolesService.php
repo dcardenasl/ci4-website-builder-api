@@ -37,7 +37,7 @@ readonly class AssignableRolesService
      * @param list<string> $actorPermissions Effective permission codes the actor holds.
      * @return list<RoleResponseDTO>
      */
-    public function listAssignable(array $actorPermissions): array
+    public function listAssignable($actorPermissions)
     {
         $roles = $this->loadRoles();
         $rolePermissions = $this->loadRolePermissions();

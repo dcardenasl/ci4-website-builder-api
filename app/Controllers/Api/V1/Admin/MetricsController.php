@@ -60,6 +60,14 @@ class MetricsController extends ApiController
         return $this->handleRequest('getSlowRequests', SlowRequestsQueryRequestDTO::class);
     }
 
+    /**
+     * Get time-bucketed request/error/latency series for trend charts
+     */
+    public function timeseries(): ResponseInterface
+    {
+        return $this->handleRequest('getTimeseries', MetricsQueryRequestDTO::class);
+    }
+
 
     /**
      * Get custom metrics by name

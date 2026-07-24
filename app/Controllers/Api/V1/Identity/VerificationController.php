@@ -39,8 +39,13 @@ class VerificationController extends ApiController
     {
         return $this->handleRequest(function ($dto, $context) {
             $userId = $context->user_id ?? 0;
+            $locale = $this->request->getVar('locale');
 
-            return $this->verificationService->resendVerification($userId, $context);
+            return $this->verificationService->resendVerification(
+                $userId,
+                $context,
+                is_string($locale) ? $locale : null
+            );
         });
     }
 }

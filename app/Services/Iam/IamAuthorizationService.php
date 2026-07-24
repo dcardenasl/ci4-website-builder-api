@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Iam;
 
 use App\Services\System\SecurityAuditLogger;
-use Config\Database;
+use CodeIgniter\Database\ConnectionInterface;
 use dcardenasl\Ci4ApiCore\Services\Iam\AbstractIamAuthorizationService;
 
 /**
@@ -26,9 +26,13 @@ class IamAuthorizationService extends AbstractIamAuthorizationService
     public const ADMIN_PERMISSION       = 'iam.admin-access';
     public const DEFAULT_APPLICATION_ID = 1;
 
+    /**
+     * @param ConnectionInterface<object, object> $db
+     */
     public function __construct(
         EffectivePermissionsResolver $resolver,
         SecurityAuditLogger $audit,
+        private readonly ConnectionInterface $db,
     ) {
         parent::__construct($resolver, $audit);
     }
@@ -45,8 +49,7 @@ class IamAuthorizationService extends AbstractIamAuthorizationService
 
     protected function loadRoleSystemFlag(int $roleId): bool
     {
-        $db   = Database::connect();
-        $row  = $db->table('roles')->where('id', $roleId)->select('is_system')->get();
+        $row  = $this->db->table('roles')->where('id', $roleId)->select('is_system')->get();
         $data = $row === false ? null : $row->getRowArray();
 
         return $data !== null && (int) ($data['is_system'] ?? 0) === 1;
@@ -58,8 +61,7 @@ class IamAuthorizationService extends AbstractIamAuthorizationService
      */
     protected function resolvePermissionCodes(array $permissionIds): array
     {
-        $db    = Database::connect();
-        $query = $db->table('permissions')
+        $query = $this->db->table('permissions')
             ->whereIn('id', $permissionIds)
             ->select('code')
             ->get();
@@ -80,8 +82,7 @@ class IamAuthorizationService extends AbstractIamAuthorizationService
      */
     protected function resolveRolePermissionCodes(array $roleIds): array
     {
-        $db    = Database::connect();
-        $query = $db->table('role_permissions rp')
+        $query = $this->db->table('role_permissions rp')
             ->select('p.code')
             ->join('permissions p', 'p.id = rp.permission_id')
             ->whereIn('rp.role_id', $roleIds)

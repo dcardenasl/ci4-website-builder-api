@@ -15,7 +15,7 @@ use dcardenasl\Ci4ApiCore\Repositories\RepositoryInterface;
 interface FileRepositoryInterface extends RepositoryInterface
 {
     /**
-     * Find a file by its stored name
+     * Find a file by its stored key.
      */
     public function findByStoredName(string $storedName): ?object;
 

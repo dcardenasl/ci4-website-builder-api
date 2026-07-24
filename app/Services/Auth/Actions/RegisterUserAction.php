@@ -31,6 +31,8 @@ class RegisterUserAction
         $requiresVerification = Hasher::isEmailVerificationRequired();
         $status = $requiresVerification ? 'pending_approval' : 'active';
         $now = date('Y-m-d H:i:s');
+        $locale = $request->locale;
+        $emailLocale = $this->normalizeLocale($locale);
 
         $userId = $this->userRepository->insert([
             'email'      => $request->email,
@@ -56,16 +58,17 @@ class RegisterUserAction
 
         if ($requiresVerification) {
             try {
-                $this->verificationService->sendVerificationEmail((int) $userId, $context);
+                $this->verificationService->sendVerificationEmail((int) $userId, $context, $locale);
             } catch (\Throwable $exception) {
                 log_message('error', 'Failed to send verification email: ' . $exception->getMessage());
             }
         } else {
             try {
                 $this->emailService->queueTemplate('account-approved', (string) $user->email, [
-                    'subject' => lang('Email.accountApproved.subject'),
+                    'subject' => $this->subjectForLocale('Email.accountApproved.subject', $emailLocale),
                     'display_name' => $user->getDisplayName(),
                     'login_link' => $this->buildLoginUrl(),
+                    'locale' => $emailLocale,
                 ]);
             } catch (\Throwable $exception) {
                 log_message('error', 'Failed to queue approval email: ' . $exception->getMessage());
@@ -73,5 +76,58 @@ class RegisterUserAction
         }
 
         return $user;
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = strtolower(trim((string) $locale));
+        if ($locale === '') {
+            $locale = (string) service('request')->getLocale();
+        }
+
+        $supported = config('App')->supportedLocales ?? [];
+        foreach ($supported as $supportedLocale) {
+            if (strtolower(trim((string) $supportedLocale)) === $locale) {
+                return $locale;
+            }
+        }
+
+        return config('App')->defaultLocale ?? 'en';
+    }
+
+    private function subjectForLocale(string $line, string $locale): string
+    {
+        $previous = $this->currentLocale();
+        $this->applyLocale($locale);
+
+        try {
+            return lang($line);
+        } finally {
+            if ($previous !== null) {
+                $this->applyLocale($previous);
+            }
+        }
+    }
+
+    private function currentLocale(): ?string
+    {
+        try {
+            return (string) service('request')->getLocale();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function applyLocale(string $locale): void
+    {
+        try {
+            service('request')->setLocale($locale);
+        } catch (\Throwable) {
+        }
+
+        try {
+            service('language')->setLocale($locale);
+        } catch (\Throwable) {
+        }
     }
 }

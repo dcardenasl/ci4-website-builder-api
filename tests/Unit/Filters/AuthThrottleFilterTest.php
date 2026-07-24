@@ -8,8 +8,10 @@ use App\Entities\ApiKeyEntity;
 use App\Filters\AuthThrottleFilter;
 use App\Models\ApiKeyModel;
 use CodeIgniter\Cache\CacheInterface;
+use CodeIgniter\Config\Factories;
 use CodeIgniter\HTTP\Response;
 use CodeIgniter\Test\CIUnitTestCase;
+use Config\Api as ApiConfig;
 use Config\Services;
 use dcardenasl\Ci4ApiCore\Http\ApiRequest;
 
@@ -18,9 +20,19 @@ use dcardenasl\Ci4ApiCore\Http\ApiRequest;
  *
  * Tests stricter rate limiting for authentication endpoints.
  * Critical for preventing brute-force attacks and credential stuffing.
+ *
+ * The general auth rate limit (`Config\Api::$authRateLimitRequests` /
+ * `$authRateLimitWindow`) is environment-dependent (relaxed under
+ * `ENVIRONMENT === 'development'` to keep local workflows usable). These
+ * tests inject a fixed `Config\Api` fixture via `Factories::injectMock()` —
+ * the same pattern used by `DeprecationHeadersFilterTest` — so assertions
+ * stay deterministic regardless of the ambient `.env` / `CI_ENVIRONMENT`.
  */
 class AuthThrottleFilterTest extends CIUnitTestCase
 {
+    private const DEFAULT_MAX_ATTEMPTS = 3;
+    private const DEFAULT_WINDOW = 3600;
+
     protected AuthThrottleFilter $filter;
     protected CacheInterface $mockCache;
 
@@ -32,12 +44,18 @@ class AuthThrottleFilterTest extends CIUnitTestCase
         $this->mockCache = $this->createMock(CacheInterface::class);
 
         Services::injectMock('cache', $this->mockCache);
+
+        $apiConfig = new ApiConfig();
+        $apiConfig->authRateLimitRequests = self::DEFAULT_MAX_ATTEMPTS;
+        $apiConfig->authRateLimitWindow = self::DEFAULT_WINDOW;
+        Factories::injectMock('config', 'Api', $apiConfig);
     }
 
     protected function tearDown(): void
     {
-        parent::tearDown();
+        Factories::reset('config');
         Services::reset(true);
+        parent::tearDown();
     }
 
     /**
@@ -45,13 +63,21 @@ class AuthThrottleFilterTest extends CIUnitTestCase
      */
     private function createMockRequest(
         string $ip = '127.0.0.1',
+        string $path = 'auth/login',
         ?string $appKey = null,
         ?string $authorization = null
     ): ApiRequest {
         $request = $this->createMock(ApiRequest::class);
+        $uri = $this->createMock(\CodeIgniter\HTTP\URI::class);
 
         $request->method('getIPAddress')
             ->willReturn($ip);
+
+        $request->method('getUri')
+            ->willReturn($uri);
+
+        $uri->method('getPath')
+            ->willReturn($path);
 
         $request->method('getHeaderLine')
             ->willReturnCallback(function (string $header) use ($appKey, $authorization): string {
@@ -76,7 +102,7 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeAllowsRequestsWithinLimit(): void
     {
-        $request = $this->createMockRequest('192.168.1.1');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login');
 
         // Simulate first auth attempt (cache returns null)
         $this->mockCache->expects($this->once())
@@ -106,12 +132,12 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeBlocksRequestsExceedingLimit(): void
     {
-        $request = $this->createMockRequest('192.168.1.1');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login');
 
-        // Simulate exceeded limit (5 attempts from Phase 0 config)
+        // Simulate the counter already at the configured max attempts.
         $this->mockCache->expects($this->once())
             ->method('get')
-            ->willReturn(5);
+            ->willReturn(self::DEFAULT_MAX_ATTEMPTS);
 
         $this->mockCache->expects($this->never())
             ->method('save');
@@ -124,10 +150,10 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeReturns429WhenThrottled(): void
     {
-        $request = $this->createMockRequest('192.168.1.1');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login');
 
         $this->mockCache->method('get')
-            ->willReturn(5); // Limit reached (from Phase 0 config)
+            ->willReturn(self::DEFAULT_MAX_ATTEMPTS); // Limit reached
 
         $result = $this->filter->before($request);
 
@@ -145,7 +171,7 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeUsesIPAddressAsIdentifier(): void
     {
-        $request = $this->createMockRequest('10.0.0.5');
+        $request = $this->createMockRequest('10.0.0.5', 'auth/login');
 
         $this->mockCache->expects($this->once())
             ->method('get')
@@ -167,7 +193,7 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeIncrementsAttemptCount(): void
     {
-        $request = $this->createMockRequest('192.168.1.1');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login');
 
         // Simulate 3rd attempt (counter already exists in cache)
         $this->mockCache->expects($this->once())
@@ -191,17 +217,60 @@ class AuthThrottleFilterTest extends CIUnitTestCase
         $this->assertTrue(true);
     }
 
-    public function testBeforeUsesStricterLimitsThanGeneralThrottle(): void
+    public function testBeforeAppliesGeneralLimitToLoginRoute(): void
     {
-        $request = $this->createMockRequest('192.168.1.1');
+        // auth/login has no route-specific override: it shares the general
+        // authRateLimitRequests config (unlike auth/refresh, see
+        // testBeforeAppliesRelaxedLimitForRefreshRoute below). A dedicated
+        // route override for login was removed because it could only ever
+        // loosen production (the general limit is already the strictest
+        // value); brute-force protection now comes purely from the shared
+        // config, tightened per-environment in Config\Api.
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login');
 
         $this->mockCache->method('get')->willReturn(null);
 
         $request->expects($this->once())
             ->method('setAuthRateLimitInfo')
             ->with($this->callback(function ($info) {
-                // Auth limit should be 5 (from Phase 0 config), not 60
-                return $info['limit'] <= 5;
+                return $info['limit'] === self::DEFAULT_MAX_ATTEMPTS;
+            }));
+
+        $this->filter->before($request);
+
+        $this->assertTrue(true);
+    }
+
+    public function testBeforeKeepsNonLoginAuthRoutesOnDefaultLimit(): void
+    {
+        $request = $this->createMockRequest('192.168.1.1', 'auth/register');
+
+        $this->mockCache->method('get')->willReturn(null);
+
+        $request->expects($this->once())
+            ->method('setAuthRateLimitInfo')
+            ->with($this->callback(function ($info) {
+                return $info['limit'] === self::DEFAULT_MAX_ATTEMPTS;
+            }));
+
+        $this->filter->before($request);
+
+        $this->assertTrue(true);
+    }
+
+    public function testBeforeAppliesRelaxedLimitForRefreshRoute(): void
+    {
+        // auth/refresh requires an already-valid refresh token (not a
+        // guessable credential), so it gets a relaxed override instead of
+        // sharing the brute-force-strength limit applied to login/register.
+        $request = $this->createMockRequest('192.168.1.1', 'auth/refresh');
+
+        $this->mockCache->method('get')->willReturn(null);
+
+        $request->expects($this->once())
+            ->method('setAuthRateLimitInfo')
+            ->with($this->callback(function ($info) {
+                return $info['limit'] === 30 && $info['remaining'] === 29;
             }));
 
         $this->filter->before($request);
@@ -249,26 +318,26 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeRespectsCustomEnvironmentLimits(): void
     {
-        // Environment variables need to be set before filter instantiation
-        // This test verifies the logic exists, but actual env() calls
-        // happen during filter execution and can't be easily mocked
+        // Confirms the filter reads whatever authRateLimitRequests /
+        // authRateLimitWindow the active Config\Api instance carries — i.e.
+        // it doesn't hardcode a limit of its own — by overriding the
+        // fixture injected in setUp() with different values.
+        $apiConfig = new ApiConfig();
+        $apiConfig->authRateLimitRequests = 7;
+        $apiConfig->authRateLimitWindow = 120;
+        Factories::injectMock('config', 'Api', $apiConfig);
 
-        $request = $this->createMockRequest('192.168.1.1');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login');
 
         $this->mockCache->method('get')->willReturn(null);
         $this->mockCache->expects($this->once())
             ->method('save')
-            ->with(
-                $this->anything(),
-                1,
-                $this->greaterThan(0) // Accept any positive window
-            );
+            ->with($this->anything(), 1, 120);
 
         $request->expects($this->once())
             ->method('setAuthRateLimitInfo')
             ->with($this->callback(function ($info) {
-                // Verify structure is correct (limit from Phase 0 is 5)
-                return $info['limit'] > 0 && $info['remaining'] >= 0;
+                return $info['limit'] === 7 && $info['remaining'] === 6;
             }));
 
         $this->filter->before($request);
@@ -276,19 +345,15 @@ class AuthThrottleFilterTest extends CIUnitTestCase
         $this->assertTrue(true);
     }
 
-    public function testBeforeUsesLongerWindowForAuthAttempts(): void
+    public function testBeforeUsesConfiguredWindowForAuthAttempts(): void
     {
-        $request = $this->createMockRequest('192.168.1.1');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login');
 
         $this->mockCache->method('get')->willReturn(null);
 
         $this->mockCache->expects($this->once())
             ->method('save')
-            ->with(
-                $this->anything(),
-                1,
-                $this->greaterThanOrEqual(900) // Default 900 seconds (15 min)
-            );
+            ->with($this->anything(), 1, self::DEFAULT_WINDOW);
 
         $request->expects($this->once())
             ->method('setAuthRateLimitInfo');
@@ -300,7 +365,7 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeWithInvalidApiKeyReturnsUnauthorized(): void
     {
-        $request = $this->createMockRequest('192.168.1.1', 'invalid-key');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login', 'invalid-key');
         $apiKeyModel = $this->createMock(ApiKeyModel::class);
 
         Services::injectMock('apiKeyModel', $apiKeyModel);
@@ -331,7 +396,7 @@ class AuthThrottleFilterTest extends CIUnitTestCase
 
     public function testBeforeWithValidApiKeyUsesApiKeyLimits(): void
     {
-        $request = $this->createMockRequest('192.168.1.1', 'valid-key');
+        $request = $this->createMockRequest('192.168.1.1', 'auth/login', 'valid-key');
         $apiKeyModel = $this->createMock(ApiKeyModel::class);
         $apiKey = new ApiKeyEntity([
             'id' => 10,
@@ -371,5 +436,32 @@ class AuthThrottleFilterTest extends CIUnitTestCase
         $result = $this->filter->before($request);
 
         $this->assertInstanceOf(ApiRequest::class, $result);
+    }
+
+    public function testBeforeUsesDifferentBucketsPerAuthRoute(): void
+    {
+        $loginRequest = $this->createMockRequest('192.168.1.1', 'auth/login');
+        $registerRequest = $this->createMockRequest('192.168.1.1', 'auth/register');
+
+        $keys = [];
+        $this->mockCache->expects($this->exactly(2))
+            ->method('get')
+            ->willReturnCallback(static function (string $key) use (&$keys): ?int {
+                $keys[] = $key;
+                return null;
+            });
+
+        $this->mockCache->expects($this->exactly(2))
+            ->method('save')
+            ->willReturn(true);
+
+        $loginRequest->expects($this->once())->method('setAuthRateLimitInfo');
+        $registerRequest->expects($this->once())->method('setAuthRateLimitInfo');
+
+        $this->filter->before($loginRequest);
+        $this->filter->before($registerRequest);
+
+        $this->assertCount(2, array_unique($keys));
+        $this->assertNotSame($keys[0], $keys[1]);
     }
 }

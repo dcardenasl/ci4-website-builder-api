@@ -10,6 +10,9 @@ use dcardenasl\Ci4ApiCore\Exceptions\ValidationException;
 
 class Base64Processor implements FileProcessorInterface
 {
+    /**
+     * @param array<string, mixed> $options
+     */
     public function process(mixed $input, array $options = []): ProcessedFile
     {
         if (!is_string($input) || str_contains($input, 'Resource id #')) {

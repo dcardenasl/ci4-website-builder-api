@@ -218,14 +218,14 @@ if [ "$DB_NAME" = "$TEST_DB_NAME" ]; then
 fi
 
 print_header "Superadmin"
-SUPERADMIN_EMAIL="$(ask_with_default "Email" "superadmin@example.com")"
+SUPERADMIN_EMAIL="$(ask_with_default "Email" "admin@example.com")"
 SUPERADMIN_PASSWORD="$(ask_hidden "Password (min 8 chars)")"
 while [ "${#SUPERADMIN_PASSWORD}" -lt 8 ]; do
   print_warn "Password must be at least 8 characters. Try again." >&2
   SUPERADMIN_PASSWORD="$(ask_hidden "Password (min 8 chars)")"
 done
-SUPERADMIN_FIRST_NAME="$(ask_with_default "First name" "Super")"
-SUPERADMIN_LAST_NAME="$(ask_with_default "Last name" "Admin")"
+SUPERADMIN_FIRST_NAME="$(ask_with_default "First name" "Admin")"
+SUPERADMIN_LAST_NAME="$(ask_with_default "Last name" "User")"
 
 # ---------------------------------------------------------------------------
 # Start logging now — all interactive prompts are done

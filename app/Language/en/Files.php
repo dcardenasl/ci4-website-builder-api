@@ -18,6 +18,7 @@ return [
     'upload_failed'       => 'File upload failed: {0}',
     'file_too_large'       => 'File size exceeds maximum allowed size',
     'invalid_file_type'    => 'File type not allowed',
+    'file_mime_mismatch'   => 'File content does not match its extension',
     'storage_failed'      => 'Failed to store file',
     'file_not_found'       => 'File not found or access denied',
     'id_required'         => 'File ID is required',
@@ -43,7 +44,7 @@ return [
     'bulk_item_failed' => 'Operation failed for this file',
 
     // File references
-    'in_use' => 'Cannot permanently delete: this file is referenced by {0} resource(s). Unlink it first.',
+    'in_use' => 'Cannot delete: this file is referenced by {0} resource(s). Unlink it first.',
 
     // Variant generation
     'not_an_image'       => 'Variant generation is only available for image files.',
@@ -55,4 +56,8 @@ return [
 
     // Replace
     'replace_success' => 'File replaced successfully.',
+
+    // Stream hashing
+    'hash_stream_invalid' => 'Expected a readable stream for file hashing.',
+    'hash_stream_failed' => 'Failed to hash uploaded file stream.',
 ];

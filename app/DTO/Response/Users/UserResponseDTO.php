@@ -54,6 +54,9 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
         $created_at = $data['created_at'] ?? null;
@@ -106,22 +109,22 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
         }
 
         try {
-            $rows = \Config\Database::connect()
+            $result = \Config\Database::connect()
                 ->table('user_roles ur')
                 ->select('r.id, r.code, r.name')
                 ->join('roles r', 'r.id = ur.role_id')
                 ->where('ur.user_id', $userId)
                 ->orderBy('r.name', 'ASC')
-                ->get()
-                ?->getResultArray() ?? [];
+                ->get();
+            $rows   = $result === false ? [] : $result->getResultArray();
         } catch (\Throwable) {
             return [];
         }
 
-        return array_map(static fn (array $r) => [
+        return array_values(array_map(static fn (array $r) => [
             'id'   => (int) $r['id'],
             'code' => (string) $r['code'],
             'name' => (string) $r['name'],
-        ], $rows);
+        ], $rows));
     }
 }

@@ -7,8 +7,10 @@ Key Components:
 - **`app/Interfaces/Files/FileRepositoryInterface.php`**: Standardizes metadata retrieval and persistence; adds `findIncludingTrashed()` and `purge()` for trash-aware reads/writes.
 - **`app/Libraries/Files/MultipartProcessor.php`**: Handles standard HTTP file uploads.
 - **`app/Libraries/Files/Base64Processor.php`**: Decodes and validates Data URIs and raw Base64.
-- **`app/Libraries/Files/FilenameGenerator.php`**: Sanitizes names and prevents storage collisions.
+- **`app/Libraries/Files/StorageKeyGenerator.php`**: Generates opaque, collision-resistant storage keys for persisted files.
 - **`app/Support/Files/ProcessedFile.php`**: Standardized value object for stream-based transfers.
+
+The database keeps the user-facing `original_name` intact and stores the physical object key separately as `stored_name`/`path`. The physical key is opaque, date-partitioned, and derived from a short content hash plus randomness so it does not depend on the original filename.
 
 Storage Drivers (`app/Libraries/Storage/`):
 - **LocalDriver**: Stores files in `writable/uploads/`.
@@ -18,6 +20,15 @@ Environment Variables:
 - `FILE_STORAGE_DRIVER`: `local` or `s3`.
 - `FILE_MAX_SIZE`: Limit in bytes.
 - `FILE_ALLOWED_TYPES`: Comma-separated extensions (e.g., `jpg,png,pdf`).
+- `FILE_DEFAULT_VISIBILITY`: Default visibility stored with uploads when a caller does not provide one.
+- `FILE_ALLOWED_VISIBILITY`: Comma-separated allow-list for accepted visibility values.
+- `FILE_USER_SCOPED_FILES`: `false` exposes all files to authenticated users; `true` restores owner scoping.
+- `FILE_ALLOW_PRIVILEGED_READ_BYPASS`: only relevant when `FILE_USER_SCOPED_FILES=true`. Defaults to
+  `true` — a caller holding `files.read` can view/download files they don't own, bypassing the
+  per-user scoping. This is intentional for a CMS where staff routinely need to read files uploaded
+  by other users (see `FilePolicyService::canBypassOwnershipForRead()`), not an oversight. Set to
+  `false` if a deployment needs strict per-owner isolation even for privileged roles.
+- `FILE_ALLOW_PUBLIC_VISIBILITY`: `true` allows trusted callers to persist public uploads.
 
 Validation:
 All file operations use DTO-based validation. The processors ensure that files are structurally sound and safe before the `FileService` attempts persistence.

@@ -53,7 +53,7 @@ This ADR resolves the question.
 ### Negative
 
 - "Hot-reload config" workflows (changing TTLs without a process restart) are not supported. Operators who want this need to add their own runtime-mutable layer (e.g. a database-backed `RuntimeConfig` repository) on top of static config — not flag it on as an env trick.
-- `putenv()` in tests has to be paired with a Config singleton reset. The tests that do this (`MaintenanceFilterTest`, `JsonFileHandlerTest`, etc.) all flush via `Factories::reset('config')` or `Services::resetSingle()`.
+- `putenv()` in tests has to be paired with a Config singleton reset, flushed via `Factories::reset('config')` or `Services::resetSingle()`.
 
 ### Neutral
 
@@ -63,5 +63,4 @@ This ADR resolves the question.
 
 - `app/Config/Api.php` — the constructor pattern this ADR documents.
 - `tests/Unit/Filters/DeprecationHeadersFilterTest.php` — example of correct test-time override via `Factories::injectMock`.
-- `tests/Unit/Filters/MaintenanceFilterTest.php` — example of `putenv()` use bounded to setUp/tearDown of a single test.
 - Audit finding F32 (May 2026) — the prompt for this ADR.

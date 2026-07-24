@@ -34,7 +34,7 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
     /**
      * Send verification email to user
      */
-    public function sendVerificationEmail(int $userId, ?SecurityContext $context = null): bool
+    public function sendVerificationEmail(int $userId, ?SecurityContext $context = null, ?string $locale = null): bool
     {
         $user = $this->userRepository->find($userId);
 
@@ -59,13 +59,15 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
             'verification_token_expires' => $expiresAt,
         ]);
 
+        $emailLocale = $this->normalizeLocale($locale);
         $verificationLink = $this->buildVerificationUrl($token);
 
         $this->emailService->queueTemplate('verification', (string) $user->email, [
-            'subject' => lang('Email.verification.subject'),
+            'subject' => $this->subjectForLocale('Email.verification.subject', $emailLocale),
             'display_name' => (string) $user->getDisplayName(),
             'verification_link' => $verificationLink,
-            'expires_at' => date('F j, Y g:i A', strtotime($expiresAt)),
+            'expires_at' => date('F j, Y g:i A', strtotime($expiresAt) ?: time()),
+            'locale' => $emailLocale,
         ]);
 
         return true;
@@ -96,7 +98,7 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
         $expiresAtStr = '';
 
         if ($expiresAtVal instanceof Time) {
-            $expiresAtStr = $expiresAtVal->toDateTimeString();
+            $expiresAtStr = (string) $expiresAtVal->toDateTimeString();
         } elseif (is_string($expiresAtVal)) {
             $expiresAtStr = $expiresAtVal;
         }
@@ -134,8 +136,64 @@ class VerificationService implements \App\Interfaces\Auth\VerificationServiceInt
     /**
      * Resend verification email
      */
-    public function resendVerification(int $userId, ?SecurityContext $context = null): bool
+    public function resendVerification(int $userId, ?SecurityContext $context = null, ?string $locale = null): bool
     {
-        return $this->sendVerificationEmail($userId, $context);
+        return $this->sendVerificationEmail($userId, $context, $locale);
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = strtolower(trim((string) $locale));
+
+        if ($locale === '') {
+            $locale = (string) service('request')->getLocale();
+        }
+
+        $supported = config('App')->supportedLocales ?? [];
+        if ($supported !== []) {
+            foreach ($supported as $supportedLocale) {
+                if (strtolower(trim((string) $supportedLocale)) === $locale) {
+                    return $locale;
+                }
+            }
+        }
+
+        return config('App')->defaultLocale ?? 'en';
+    }
+
+    private function subjectForLocale(string $line, string $locale): string
+    {
+        $previous = $this->currentLocale();
+        $this->applyLocale($locale);
+
+        try {
+            return lang($line);
+        } finally {
+            if ($previous !== null) {
+                $this->applyLocale($previous);
+            }
+        }
+    }
+
+    private function currentLocale(): ?string
+    {
+        try {
+            return (string) service('request')->getLocale();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function applyLocale(string $locale): void
+    {
+        try {
+            service('request')->setLocale($locale);
+        } catch (\Throwable) {
+        }
+
+        try {
+            service('language')->setLocale($locale);
+        } catch (\Throwable) {
+        }
     }
 }

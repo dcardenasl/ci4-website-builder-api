@@ -37,7 +37,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'http://localhost:8080/',
             'database.default.hostname'     => '127.0.0.1',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'root',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(32)),
             'JWT_SECRET_KEY'                => $this->strongSecret(),
@@ -82,7 +82,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'http://localhost:8080/',
             'database.default.hostname'     => '127.0.0.1',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'root',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(32)),
             'JWT_SECRET_KEY'                => 'too-short',
@@ -98,7 +98,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'http://localhost:8080/',
             'database.default.hostname'     => '127.0.0.1',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'root',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(32)),
             'JWT_SECRET_KEY'                => str_repeat('your-secret-here-CHANGE-ME-1234567890', 3),
@@ -114,7 +114,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'http://localhost:8080/',
             'database.default.hostname'     => '127.0.0.1',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'root',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(32)),
             'JWT_SECRET_KEY'                => str_repeat('a', 80),
@@ -131,7 +131,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'http://localhost:8080/',
             'database.default.hostname'     => '127.0.0.1',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'root',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(32)),
             'JWT_SECRET_KEY'                => $this->strongSecret(),
@@ -148,7 +148,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'http://localhost:8080/',
             'database.default.hostname'     => '127.0.0.1',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'root',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(16)),
             'JWT_SECRET_KEY'                => $this->strongSecret(),
@@ -164,7 +164,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'https://api.example.com/',
             'database.default.hostname'     => 'db.example.com',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'app',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(64)),
             'JWT_SECRET_KEY'                => $this->strongSecret(),
@@ -180,7 +180,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'https://api.example.com/',
             'database.default.hostname'     => 'db.example.com',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'app',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(64)),
             'JWT_SECRET_KEY'                => $this->strongSecret(),
@@ -197,7 +197,7 @@ class EnvCheckTest extends CIUnitTestCase
         $resolver = $this->fakeEnv([
             'app.baseURL'                   => 'https://api.example.com/',
             'database.default.hostname'     => 'db.example.com',
-            'database.default.database'     => 'ci4_api',
+            'database.default.database'     => 'ci4_website_builder_api',
             'database.default.username'     => 'app',
             'encryption.key'                => 'hex2bin:' . bin2hex(random_bytes(64)),
             'JWT_SECRET_KEY'                => $this->strongSecret(),

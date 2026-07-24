@@ -22,8 +22,11 @@ readonly class JwtService implements \App\Interfaces\Tokens\JwtServiceInterface
     public function __construct(
         private string $secretKey,
         private int $expirationTime = 3600,
-        private string $issuer = 'http://localhost:8080'
+        private string $issuer = ''
     ) {
+        if (! $issuer) {
+            throw new \RuntimeException(lang('Tokens.issuerRequired'));
+        }
         if (strlen($this->secretKey) < 32) {
             throw new RuntimeException(lang('Api.jwtSecretTooShort'));
         }
@@ -35,7 +38,7 @@ readonly class JwtService implements \App\Interfaces\Tokens\JwtServiceInterface
      *
      * @param list<string> $permissions Effective permission codes; encoded as the `scope` claim.
      */
-    public function encode(int $userId, array $permissions = []): string
+    public function encode(int $userId, $permissions = []): string
     {
         $issuedAt = time();
         $expirationTime = $issuedAt + $this->expirationTime;
@@ -61,7 +64,7 @@ readonly class JwtService implements \App\Interfaces\Tokens\JwtServiceInterface
      *
      * @param list<string> $permissions Effective permission codes for the application
      */
-    public function encodeServiceToken(string $sub, array $permissions, int $ttl): string
+    public function encodeServiceToken(string $sub, $permissions, int $ttl): string
     {
         $issuedAt       = time();
         $expirationTime = $issuedAt + $ttl;
@@ -123,7 +126,7 @@ readonly class JwtService implements \App\Interfaces\Tokens\JwtServiceInterface
      *
      * @return list<string>
      */
-    public function getPermissions(string $token): array
+    public function getPermissions(string $token)
     {
         $decoded = $this->decode($token);
         if ($decoded === null || ! isset($decoded->scope)) {

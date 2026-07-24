@@ -80,6 +80,10 @@ readonly class UserIndexRequestDTO extends BaseRequestDTO
         return $data;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $filter
+     */
     private function extractString(array $data, array $filter, string $key): ?string
     {
         $value = $data[$key] ?? $filter[$key] ?? null;

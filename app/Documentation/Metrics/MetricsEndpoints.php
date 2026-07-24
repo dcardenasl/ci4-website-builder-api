@@ -102,6 +102,34 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Get(
+    path: '/api/v1/metrics/timeseries',
+    tags: ['Metrics'],
+    summary: 'Get time-bucketed request/error/latency series',
+    security: [['bearerAuth' => []]],
+    parameters: [
+        new OA\Parameter(
+            name: 'period',
+            in: 'query',
+            required: false,
+            schema: new OA\Schema(type: 'string', enum: ['1h', '24h', '7d', '30d'], example: '24h')
+        ),
+    ],
+    responses: [
+        new OA\Response(
+            response: 200,
+            description: 'Time series data: parallel arrays of bucket labels, request counts, error counts, and average latency',
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'status', type: 'string', example: 'success'),
+                    new OA\Property(property: 'data', ref: '#/components/schemas/MetricsPayloadResponse'),
+                ],
+                type: 'object'
+            )
+        ),
+        new OA\Response(response: 401, ref: '#/components/responses/UnauthorizedResponse'),
+    ]
+)]
+#[OA\Get(
     path: '/api/v1/metrics/custom/{name}',
     tags: ['Metrics'],
     summary: 'Get custom metrics',

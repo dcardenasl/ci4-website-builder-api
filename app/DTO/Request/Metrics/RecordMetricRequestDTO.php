@@ -13,6 +13,7 @@ readonly class RecordMetricRequestDTO extends BaseRequestDTO
 {
     public string $name;
     public float $value;
+    /** @var array<string, mixed> */
     public array $tags;
 
     public function rules(): array
@@ -27,9 +28,7 @@ readonly class RecordMetricRequestDTO extends BaseRequestDTO
     public function messages(): array
     {
         return [
-            'name' => [
-                'required' => lang('Metrics.nameRequired'),
-            ],
+            'name' => lang('Metrics.nameRequired'),
         ];
     }
 

@@ -18,6 +18,11 @@ use OpenApi\Attributes as OA;
 )]
 readonly class MetricsOverviewResponseDTO implements DataTransferObjectInterface
 {
+    /**
+     * @param array<string, mixed> $request_stats
+     * @param list<array<string, mixed>> $slow_requests
+     * @param array<string, mixed> $slo
+     */
     public function __construct(
         #[OA\Property(
             property: 'request_stats',
@@ -51,12 +56,19 @@ readonly class MetricsOverviewResponseDTO implements DataTransferObjectInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function fromArray(array $data): self
     {
+        $requestStats = $data['request_stats'] ?? [];
+        $slowRequests = $data['slow_requests'] ?? [];
+        $slo          = $data['slo'] ?? [];
+
         return new self(
-            request_stats: $data['request_stats'] ?? [],
-            slow_requests: $data['slow_requests'] ?? [],
-            slo: $data['slo'] ?? [],
+            request_stats: is_array($requestStats) ? $requestStats : [],
+            slow_requests: is_array($slowRequests) ? array_values($slowRequests) : [],
+            slo: is_array($slo) ? $slo : [],
             timestamp: date('Y-m-d H:i:s')
         );
     }

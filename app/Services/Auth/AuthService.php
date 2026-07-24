@@ -36,8 +36,6 @@ class AuthService implements \App\Interfaces\Auth\AuthServiceInterface
     protected RegisterUserAction $registerUserAction;
     protected GoogleLoginAction $googleLoginAction;
 
-    private const APPLICATION_ID = 1;
-
     public function __construct(
         protected UserRepositoryInterface $userRepository,
         RegisterUserAction $registerUserAction,
@@ -119,7 +117,7 @@ class AuthService implements \App\Interfaces\Auth\AuthServiceInterface
 
         return MeResponseDTO::fromUserData(
             $user->toArray(),
-            $this->permissionsResolver->resolve($user_id, self::APPLICATION_ID)
+            $this->permissionsResolver->resolveAll($user_id)
         );
     }
 
@@ -154,7 +152,7 @@ class AuthService implements \App\Interfaces\Auth\AuthServiceInterface
 
             return MeResponseDTO::fromUserData(
                 $updatedUser->toArray(),
-                $this->permissionsResolver->resolve($userId, self::APPLICATION_ID)
+                $this->permissionsResolver->resolveAll($userId)
             );
         });
     }

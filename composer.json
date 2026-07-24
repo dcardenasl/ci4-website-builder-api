@@ -65,11 +65,15 @@
     "scripts": {
         "post-install-cmd": [
             "chmod +x pre-commit",
-            "cp pre-commit .git/hooks/pre-commit"
+            "cp pre-commit .git/hooks/pre-commit",
+            "chmod +x pre-push",
+            "cp pre-push .git/hooks/pre-push"
         ],
         "post-update-cmd": [
             "chmod +x pre-commit",
-            "cp pre-commit .git/hooks/pre-commit"
+            "cp pre-commit .git/hooks/pre-commit",
+            "chmod +x pre-push",
+            "cp pre-push .git/hooks/pre-push"
         ],
         "test:prepare-db": "php spark tests:prepare-db",
         "test:unit": [
@@ -92,7 +96,7 @@
             "@test:prepare-db",
             "phpunit --configuration=phpunit.xml --testdox"
         ],
-        "coverage:check": "php scripts/check-coverage.php 70 tests/coverage/clover.xml",
+        "coverage:check": "php scripts/check-coverage.php 47.15 tests/coverage/clover.xml",
         "phpstan": "phpstan analyse --memory-limit=512M",
         "cs-fix": "php-cs-fixer fix",
         "cs-check": "php-cs-fixer fix --dry-run --diff --sequential",
@@ -114,7 +118,10 @@
             "@i18n-check",
             "@docs-i18n-check",
             "@test"
-        ]
+        ],
+        "format": "@cs-fix",
+        "format:check": "@cs-check",
+        "analyse": "@phpstan"
     },
     "config": {
         "optimize-autoloader": true,

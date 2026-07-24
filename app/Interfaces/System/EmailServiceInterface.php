@@ -41,7 +41,8 @@ interface EmailServiceInterface
      * @param array<string, mixed> $data Template data
      * @return bool
      */
-    public function sendTemplate(string $template, string $to, array $data): bool;
+    /** @param array<string, mixed> $data */
+    public function sendTemplate(string $template, string $to, $data): bool;
 
     /**
      * Queue a template email
@@ -51,5 +52,6 @@ interface EmailServiceInterface
      * @param array<string, mixed> $data Template data
      * @return int Job ID
      */
-    public function queueTemplate(string $template, string $to, array $data): int;
+    /** @param array<string, mixed> $data */
+    public function queueTemplate(string $template, string $to, $data = []): int;
 }

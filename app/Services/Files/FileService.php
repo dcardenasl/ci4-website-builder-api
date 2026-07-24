@@ -7,23 +7,19 @@ namespace App\Services\Files;
 use App\DTO\Request\Files\UpdateFileMetadataRequestDTO;
 use App\DTO\Response\Files\FileDownloadResponseDTO;
 use App\DTO\Response\Files\FileResponseDTO;
+use App\Interfaces\Files\BinaryIngestionInterface;
+use App\Interfaces\Files\FilePolicyServiceInterface;
 use App\Interfaces\Files\FileReferenceRepositoryInterface;
 use App\Interfaces\Files\FileRepositoryInterface;
 use App\Interfaces\Files\FileServiceInterface;
-use App\Interfaces\Files\VirusScannerServiceInterface;
-use App\Libraries\Files\Base64Processor;
-use App\Libraries\Files\FilenameGenerator;
 use App\Libraries\Files\ImageVariantProcessor;
-use App\Libraries\Files\MultipartProcessor;
 use App\Libraries\Storage\StorageManager;
-use App\Support\Files\ProcessedFile;
 use dcardenasl\Ci4ApiCore\Dto\PaginatedResponseDTO;
 use dcardenasl\Ci4ApiCore\Dto\SecurityContext;
 use dcardenasl\Ci4ApiCore\Exceptions\AuthorizationException;
 use dcardenasl\Ci4ApiCore\Exceptions\BadRequestException;
 use dcardenasl\Ci4ApiCore\Exceptions\ConflictException;
 use dcardenasl\Ci4ApiCore\Exceptions\NotFoundException;
-use dcardenasl\Ci4ApiCore\Exceptions\ValidationException;
 use dcardenasl\Ci4ApiCore\Models\Traits\AppliesQueryOptions;
 use dcardenasl\Ci4ApiCore\Services\AuditServiceInterface;
 
@@ -42,13 +38,10 @@ class FileService implements FileServiceInterface
         protected \dcardenasl\Ci4ApiCore\Mappers\ResponseMapperInterface $responseMapper,
         protected StorageManager $storage,
         protected AuditServiceInterface $auditService,
-        protected FilenameGenerator $filenameGenerator,
-        protected MultipartProcessor $multipartProcessor,
-        protected Base64Processor $base64Processor,
         protected ImageVariantProcessor $imageVariantProcessor,
         protected FileReferenceRepositoryInterface $fileReferenceRepository,
-        protected ?VirusScannerServiceInterface $virusScanner = null,
-        private bool $userScopedFiles = true
+        protected FilePolicyServiceInterface $filePolicy,
+        protected BinaryIngestionInterface $binaryIngestion,
     ) {
     }
 
@@ -59,94 +52,9 @@ class FileService implements FileServiceInterface
     {
         /** @var \App\DTO\Request\Files\FileUploadRequestDTO $request */
         $userId = $this->resolveUserId($request, $context);
+        $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
 
-        // 1. Process Input into a standardized ProcessedFile
-        $processedFile = $request->isBase64()
-            ? $this->base64Processor->process($request->file, $request->toArray())
-            : $this->multipartProcessor->process($request->file);
-
-        // 2. Delegate to storage and metadata persistence
-        return $this->storeAndSaveMetadata($processedFile, $userId);
-    }
-
-    /**
-     * Common logic to store file and save to database
-     */
-    protected function storeAndSaveMetadata(ProcessedFile $file, int $userId): FileResponseDTO
-    {
-        // 1. Virus Scanning Phase
-        if ($this->virusScanner !== null) {
-            $tempPath = tempnam(sys_get_temp_dir(), 'api_upload_');
-            if ($tempPath === false) {
-                throw new \RuntimeException(lang('Files.temp_file_creation_failed'));
-            }
-            $tempStream = fopen($tempPath, 'wb');
-
-            if ($tempStream !== false) {
-                // Rewind the stream to ensure we read from start
-                rewind($file->contents);
-                stream_copy_to_stream($file->contents, $tempStream);
-                fclose($tempStream);
-
-                try {
-                    if (!$this->virusScanner->isSafe($tempPath)) {
-                        throw new BadRequestException(lang('Files.malware_detected'));
-                    }
-                } finally {
-                    @unlink($tempPath);
-                    // Rewind again for the final storage process
-                    rewind($file->contents);
-                }
-            }
-        }
-
-        $datePath = date('Y/m/d');
-        $storedName = $this->filenameGenerator->generate($file->originalName, $file->extension, $datePath);
-        $path = $datePath . '/' . $storedName;
-
-        // Save physical file
-        if (!$this->storage->put($path, $file->contents)) {
-            throw new \RuntimeException(lang('Files.storage_error'));
-        }
-
-        $variants           = [];
-        $originalDimensions = ['width' => null, 'height' => null];
-
-        if (in_array($file->mimeType, ImageVariantProcessor::PROCESSABLE, true)) {
-            $variantResult      = $this->imageVariantProcessor->generate($path, $file->extension, $this->storage);
-            $variants           = $variantResult['variants'];
-            $originalDimensions = $variantResult['dimensions'];
-        }
-
-        // Save metadata
-        $fileId = $this->fileRepository->insert([
-            'user_id' => $userId,
-            'original_name' => sanitize_filename($file->originalName, false),
-            'stored_name' => $storedName,
-            'mime_type' => $file->mimeType,
-            'size' => $file->size,
-            'storage_driver' => $this->storage->getDriverName(),
-            'path' => $path,
-            'url' => $this->storage->url($path),
-            'metadata' => json_encode(['extension' => $file->extension, 'uploaded_by' => $userId]),
-            'uploaded_at' => date('Y-m-d H:i:s'),
-            'variants' => $variants !== [] ? json_encode($variants) : null,
-            'width'    => $originalDimensions['width'],
-            'height'   => $originalDimensions['height'],
-        ]);
-
-        if ($fileId === false || $fileId === true) {
-            $this->storage->delete($path);
-            throw new ValidationException(lang('Files.save_failed'), $this->fileRepository->errors());
-        }
-
-        $savedFile = $this->fileRepository->find($fileId);
-        if ($savedFile === null) {
-            throw new \RuntimeException(sprintf('File row %d disappeared after insert.', (int) $fileId));
-        }
-        /** @var FileResponseDTO $response */
-        $response = $this->responseMapper->map($savedFile);
-        return $response;
+        return $this->binaryIngestion->create($request, $userId, $visibility);
     }
 
     /**
@@ -165,7 +73,7 @@ class FileService implements FileServiceInterface
             ? $this->fileRepository->getModel()
             : null;
         $baseCriteria = function (\dcardenasl\Ci4ApiCore\Filters\QueryBuilder $builder) use ($userId, $trashedMode, $fileModel): void {
-            if ($this->userScopedFiles) {
+            if ($this->filePolicy->shouldScopeListingsToOwner()) {
                 $builder->where('user_id', $userId);
             }
             if ($fileModel === null) {
@@ -238,6 +146,11 @@ class FileService implements FileServiceInterface
             throw new BadRequestException(lang('Files.already_trashed'));
         }
 
+        $usages = $this->fileReferenceRepository->getByFileId((int) $file->id);
+        if ($usages !== []) {
+            throw new ConflictException(lang('Files.in_use', [count($usages)]));
+        }
+
         return $this->wrapInTransaction(function () use ($file, $context) {
             $this->fileRepository->update($file->id, ['deleted_by_user_id' => $context->user_id]);
             return $this->fileRepository->delete($file->id);
@@ -293,7 +206,7 @@ class FileService implements FileServiceInterface
      *
      * @return array<array{resource: string, resource_id: int, label: string|null, role: string}>
      */
-    public function getUsages(int $id, ?SecurityContext $context = null): array
+    public function getUsages(int $id, ?SecurityContext $context = null)
     {
         if ($context?->user_id === null) {
             throw new AuthorizationException(lang('Api.unauthorized'));
@@ -316,7 +229,7 @@ class FileService implements FileServiceInterface
      *
      * @return array<string, array{path: string, url: string, width: int, height: int}>
      */
-    public function regenerateVariants(int $id, ?SecurityContext $context = null): array
+    public function regenerateVariants(int $id, ?SecurityContext $context = null)
     {
         if ($context?->user_id === null) {
             throw new AuthorizationException(lang('Api.unauthorized'));
@@ -369,55 +282,8 @@ class FileService implements FileServiceInterface
             throw new BadRequestException(lang('Files.already_trashed'));
         }
 
-        $processedFile = $request->isBase64()
-            ? $this->base64Processor->process($request->file, $request->toArray())
-            : $this->multipartProcessor->process($request->file);
-
-        $datePath   = date('Y/m/d');
-        $storedName = $this->filenameGenerator->generate($processedFile->originalName, $processedFile->extension, $datePath);
-        $newPath    = $datePath . '/' . $storedName;
-
-        if (!$this->storage->put($newPath, $processedFile->contents)) {
-            throw new \RuntimeException(lang('Files.storage_error'));
-        }
-
-        $variants           = [];
-        $originalDimensions = ['width' => null, 'height' => null];
-
-        if (in_array($processedFile->mimeType, ImageVariantProcessor::PROCESSABLE, true)) {
-            $variantResult      = $this->imageVariantProcessor->generate($newPath, $processedFile->extension, $this->storage);
-            $variants           = $variantResult['variants'];
-            $originalDimensions = $variantResult['dimensions'];
-        }
-
-        return $this->wrapInTransaction(function () use ($file, $processedFile, $newPath, $storedName, $variants, $originalDimensions) {
-            $oldPath = (string) $file->path;
-
-            $this->fileRepository->update((int) $file->id, [
-                'original_name'  => sanitize_filename($processedFile->originalName, false),
-                'stored_name'    => $storedName,
-                'mime_type'      => $processedFile->mimeType,
-                'size'           => $processedFile->size,
-                'storage_driver' => $this->storage->getDriverName(),
-                'path'           => $newPath,
-                'url'            => $this->storage->url($newPath),
-                'metadata'       => json_encode(['extension' => $processedFile->extension]),
-                'variants'       => $variants !== [] ? json_encode($variants) : null,
-                'width'          => $originalDimensions['width'],
-                'height'         => $originalDimensions['height'],
-            ]);
-
-            $this->storage->delete($oldPath);
-
-            $updated = $this->fileRepository->find((int) $file->id);
-            if ($updated === null) {
-                throw new \RuntimeException(sprintf('File row %d disappeared after replace.', (int) $file->id));
-            }
-
-            /** @var FileResponseDTO $response */
-            $response = $this->responseMapper->map($updated);
-            return $response;
-        });
+        $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
+        return $this->binaryIngestion->replace($file, $request, $visibility);
     }
 
     /**
@@ -443,17 +309,29 @@ class FileService implements FileServiceInterface
         return $response;
     }
 
-    public function bulkDestroy(array $ids, ?SecurityContext $context = null): array
+    /**
+     * @param list<int> $ids
+     * @return list<array{id:int, ok:bool, error?:string}>
+     */
+    public function bulkDestroy($ids, ?SecurityContext $context = null)
     {
         return $this->runBulk($ids, fn (int $id) => $this->destroy($id, $context));
     }
 
-    public function bulkRestore(array $ids, ?SecurityContext $context = null): array
+    /**
+     * @param list<int> $ids
+     * @return list<array{id:int, ok:bool, error?:string}>
+     */
+    public function bulkRestore($ids, ?SecurityContext $context = null)
     {
         return $this->runBulk($ids, fn (int $id) => $this->restore($id, $context));
     }
 
-    public function bulkForceDestroy(array $ids, ?SecurityContext $context = null): array
+    /**
+     * @param list<int> $ids
+     * @return list<array{id:int, ok:bool, error?:string}>
+     */
+    public function bulkForceDestroy($ids, ?SecurityContext $context = null)
     {
         return $this->runBulk($ids, fn (int $id) => $this->forceDestroy($id, $context));
     }
@@ -486,6 +364,9 @@ class FileService implements FileServiceInterface
         return $results;
     }
 
+    /**
+     * @param \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface|array<string, mixed> $request
+     */
     protected function resolveUserId(object|array $request, ?SecurityContext $context): int
     {
         $data = $request instanceof \dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface ? $request->toArray() : (array)$request;
@@ -497,6 +378,8 @@ class FileService implements FileServiceInterface
         }
         return $userId;
     }
+
+
     protected function findFileAndAuthorize(
         int $id,
         int $userId,
@@ -538,9 +421,9 @@ class FileService implements FileServiceInterface
         }
 
         $effectiveBypass = $bypassOwnership
-            || (in_array($action, ['download', 'view'], true) && !$this->userScopedFiles);
+            || (in_array($action, ['download', 'view'], true) && $this->filePolicy->canBypassOwnershipForRead($context));
 
-        if (!$effectiveBypass && (int) $file->user_id !== $userId) {
+        if (!$effectiveBypass && ! $this->filePolicy->canAccessFile($file, $userId, $action, $context)) {
             $deniedAction = match ($action) {
                 'download'     => 'unauthorized_file_download',
                 'delete'       => 'unauthorized_file_delete',
@@ -563,4 +446,5 @@ class FileService implements FileServiceInterface
 
         return $file;
     }
+
 }

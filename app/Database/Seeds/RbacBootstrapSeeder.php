@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Database\Seeds;
 
 use CodeIgniter\Database\Seeder;
+use Config\DomainPermissions;
 
 /**
  * Bootstraps the IAM tables with the system app, permissions and the three
@@ -16,6 +17,7 @@ use CodeIgniter\Database\Seeder;
 class RbacBootstrapSeeder extends Seeder
 {
     private const APP_SELF = 'self';
+    private const CMS_APP_CODE = 'cms';
 
     /** @var array<int, array{code: string, resource: string, action: string, description: string}> */
     private const PERMISSIONS = [
@@ -128,6 +130,8 @@ class RbacBootstrapSeeder extends Seeder
             ->where('code', 'iam.admin-access')
             ->delete();
 
+        $this->syncCmsDomainPermissions();
+
         return $map;
     }
 
@@ -170,8 +174,24 @@ class RbacBootstrapSeeder extends Seeder
 
             $map[$roleDef['code']] = $roleId;
 
-            $codes = $roleDef['permissions'] === '*' ? array_keys($permissionIds) : $roleDef['permissions'];
-            $this->syncRolePermissions($roleId, array_map(static fn (string $c) => $permissionIds[$c], $codes));
+            $rolePermissionIds = $roleDef['permissions'] === '*'
+                ? array_values($this->allPermissionIds())
+                : array_map(static fn (string $c) => $permissionIds[$c], $roleDef['permissions']);
+            $this->syncRolePermissions($roleId, $rolePermissionIds);
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function allPermissionIds(): array
+    {
+        $rows = $this->db->table('permissions')->select('code, id')->get()->getResultArray();
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(string) $row['code']] = (int) $row['id'];
         }
 
         return $map;
@@ -211,6 +231,80 @@ class RbacBootstrapSeeder extends Seeder
                     'updated_at' => $now,
                 ]);
             }
+        }
+    }
+
+    /**
+     * Mirrors the CMS permission catalog from the domain package into the hub
+     * and ensures the seeded superadmin role keeps full coverage after a reset.
+     */
+    private function syncCmsDomainPermissions(): void
+    {
+        if (! class_exists(DomainPermissions::class)) {
+            return;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $app = $this->db->table('applications')
+            ->where('code', self::CMS_APP_CODE)
+            ->get()
+            ->getRowArray();
+
+        if ($app === null) {
+            $this->db->table('applications')->insert([
+                'code'       => self::CMS_APP_CODE,
+                'name'       => self::CMS_APP_CODE,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $appId = (int) $this->db->insertID();
+        } else {
+            $appId = (int) $app['id'];
+        }
+
+        $existing = $this->db->table('permissions')
+            ->where('application_id', $appId)
+            ->get()
+            ->getResultArray();
+        $existingCodes = [];
+        foreach ($existing as $row) {
+            $existingCodes[(string) $row['code']] = true;
+        }
+
+        foreach (DomainPermissions::PERMISSIONS as $permission) {
+            $code = (string) ($permission['code'] ?? '');
+            if ($code === '' || isset($existingCodes[$code])) {
+                continue;
+            }
+
+            $this->db->table('permissions')->insert([
+                'application_id' => $appId,
+                'code'           => $code,
+                'resource'       => (string) ($permission['resource'] ?? ''),
+                'action'         => (string) ($permission['action'] ?? ''),
+                'description'    => (string) ($permission['description'] ?? ''),
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ]);
+        }
+
+        $superadmin = $this->db->table('roles')
+            ->where('code', 'superadmin')
+            ->get()
+            ->getRowArray();
+        if ($superadmin === null) {
+            return;
+        }
+
+        $permissionIds = $this->db->table('permissions')
+            ->select('id')
+            ->where('application_id', $appId)
+            ->get()
+            ->getResultArray();
+
+        $ids = array_map(static fn (array $row): int => (int) $row['id'], $permissionIds);
+        if ($ids !== []) {
+            $this->syncRolePermissions((int) $superadmin['id'], $ids);
         }
     }
 

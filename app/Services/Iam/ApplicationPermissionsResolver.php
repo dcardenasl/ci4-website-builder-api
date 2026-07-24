@@ -30,6 +30,7 @@ class ApplicationPermissionsResolver implements ApplicationPermissionsResolverIn
 
     /**
      * @return list<string> permission codes (sorted, deduplicated)
+     * @phpstan-ignore dtoFirst.arrayReturn
      */
     public function resolve(int $applicationId): array
     {

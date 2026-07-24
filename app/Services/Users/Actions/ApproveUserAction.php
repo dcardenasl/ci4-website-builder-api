@@ -22,7 +22,7 @@ class ApproveUserAction
     ) {
     }
 
-    public function execute(int $id, ?SecurityContext $context = null, ?string $clientBaseUrl = null): UserEntity
+    public function execute(int $id, ?SecurityContext $context = null, ?string $clientBaseUrl = null, ?string $locale = null): UserEntity
     {
         /** @var UserEntity|null $user */
         $user = $this->userRepository->find($id);
@@ -47,10 +47,13 @@ class ApproveUserAction
             'approved_by' => $context?->user_id,
         ]);
 
+        $emailLocale = $this->normalizeLocale($locale);
+
         $this->emailService->queueTemplate('account-approved', (string) $user->email, [
-            'subject' => lang('Email.accountApproved.subject'),
+            'subject' => $this->subjectForLocale('Email.accountApproved.subject', $emailLocale),
             'display_name' => $user->getDisplayName(),
             'login_link' => $this->buildLoginUrl($clientBaseUrl),
+            'locale' => $emailLocale,
         ]);
 
         /** @var UserEntity|null $approvedUser */
@@ -60,5 +63,61 @@ class ApproveUserAction
         }
 
         return $approvedUser;
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = strtolower(trim((string) $locale));
+        if ($locale === '') {
+            $locale = (string) service('request')->getLocale();
+        }
+
+        foreach (config('App')->supportedLocales as $supportedLocale) {
+            if (strtolower(trim((string) $supportedLocale)) === $locale) {
+                return $locale;
+            }
+        }
+
+        return (string) config('App')->defaultLocale;
+    }
+
+    private function subjectForLocale(string $line, string $locale): string
+    {
+        $previousLocale = null;
+
+        try {
+            $previousLocale = (string) service('request')->getLocale();
+        } catch (\Throwable) {
+            $previousLocale = null;
+        }
+
+        try {
+            try {
+                service('request')->setLocale($locale);
+            } catch (\Throwable) {
+                // no-op in CLI contexts without a request
+            }
+
+            try {
+                service('language')->setLocale($locale);
+            } catch (\Throwable) {
+                // no-op if language service is unavailable
+            }
+
+            return lang($line);
+        } finally {
+            if ($previousLocale !== null && $previousLocale !== '') {
+                try {
+                    service('request')->setLocale($previousLocale);
+                } catch (\Throwable) {
+                    // no-op
+                }
+                try {
+                    service('language')->setLocale($previousLocale);
+                } catch (\Throwable) {
+                    // no-op
+                }
+            }
+        }
     }
 }

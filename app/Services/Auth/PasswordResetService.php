@@ -38,6 +38,7 @@ class PasswordResetService implements \App\Interfaces\Auth\PasswordResetServiceI
     {
         /** @var \App\DTO\Request\Identity\ForgotPasswordRequestDTO $request */
         $email = $request->email;
+        $locale = $this->normalizeLocale($request->locale ?? null);
         $user = $this->userRepository->findByEmail($email);
 
         if ($user instanceof \App\Entities\UserEntity) {
@@ -51,9 +52,10 @@ class PasswordResetService implements \App\Interfaces\Auth\PasswordResetServiceI
             $resetLink = $this->buildResetPasswordUrl($token, $email);
             try {
                 $this->emailService->queueTemplate('password-reset', $email, [
-                    'subject' => lang('Email.passwordReset.subject'),
+                    'subject' => $this->subjectForLocale('Email.passwordReset.subject', $locale),
                     'reset_link' => $resetLink,
                     'expires_in' => '60 minutes',
+                    'locale' => $locale,
                 ]);
             } catch (\Throwable $e) {
                 log_message('error', 'Failed to queue password reset email: ' . $e->getMessage());
@@ -138,6 +140,59 @@ class PasswordResetService implements \App\Interfaces\Auth\PasswordResetServiceI
         });
 
         return true;
+    }
+
+    private function normalizeLocale(?string $locale): string
+    {
+        $locale = strtolower(trim((string) $locale));
+        if ($locale === '') {
+            $locale = (string) service('request')->getLocale();
+        }
+
+        $supported = config('App')->supportedLocales ?? [];
+        foreach ($supported as $supportedLocale) {
+            if (strtolower(trim((string) $supportedLocale)) === $locale) {
+                return $locale;
+            }
+        }
+
+        return config('App')->defaultLocale ?? 'en';
+    }
+
+    private function subjectForLocale(string $line, string $locale): string
+    {
+        $previous = $this->currentLocale();
+        $this->applyLocale($locale);
+
+        try {
+            return lang($line);
+        } finally {
+            if ($previous !== null) {
+                $this->applyLocale($previous);
+            }
+        }
+    }
+
+    private function currentLocale(): ?string
+    {
+        try {
+            return (string) service('request')->getLocale();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function applyLocale(string $locale): void
+    {
+        try {
+            service('request')->setLocale($locale);
+        } catch (\Throwable) {
+        }
+
+        try {
+            service('language')->setLocale($locale);
+        } catch (\Throwable) {
+        }
     }
 
     private function reactivateDeletedUserForApproval(\App\Entities\UserEntity $user, string $email, ?SecurityContext $context = null): void

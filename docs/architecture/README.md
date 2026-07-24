@@ -187,16 +187,16 @@ For a condensed, table-based quick reference optimized for rapid lookup:
 → See [`../AGENT_QUICK_REFERENCE.md`](../AGENT_QUICK_REFERENCE.md)
 
 For hands-on, step-by-step tutorial:
-→ See [`../GETTING_STARTED.md`](../GETTING_STARTED.md)
+→ See [`../../GETTING_STARTED.md`](../../GETTING_STARTED.md)
 
 ## 🧾 Architecture Decisions (ADRs)
 
 Use ADRs for non-negotiable cross-cutting decisions:
 
-1. [ADR-004-OBSERVABILITY-GOVERNANCE.md](ADR-004-OBSERVABILITY-GOVERNANCE.md)
-2. [ADR-005-SERVICE-PURITY-DI.md](ADR-005-SERVICE-PURITY-DI.md)
-3. [ADR-006-FEATURE-TOGGLE-POLICY.md](ADR-006-FEATURE-TOGGLE-POLICY.md)
-4. [ADR-007-SERVICE-RETURN-CONTRACTS.md](ADR-007-SERVICE-RETURN-CONTRACTS.md)
+1. [ADR-004-OBSERVABILITY-GOVERNANCE.md](../adr/ADR-004-OBSERVABILITY-GOVERNANCE.md)
+2. [ADR-005-SERVICE-PURITY-DI.md](../adr/ADR-005-SERVICE-PURITY-DI.md)
+3. [ADR-006-FEATURE-TOGGLE-POLICY.md](../adr/ADR-006-FEATURE-TOGGLE-POLICY.md)
+4. [ADR-007-SERVICE-RETURN-CONTRACTS.md](../adr/ADR-007-SERVICE-RETURN-CONTRACTS.md)
 
 ## 🚨 Handling Architecture Drift
 
@@ -232,7 +232,7 @@ Once you've completed the roadmap:
 
 ## 🧪 Living Example
 
-Walk through the generated `DemoProduct` module in `app/Services/Catalog`, `app/Controllers/Api/V1/Catalog`, and its DTO/tests to see the template structure applied with DTO validation, service orchestration, and documentation artifacts in one place.
+Walk through the maintained `Files` resource in `app/Services/Files`, `app/Controllers/Api/V1/Files`, `app/DTO/*/Files`, and its tests to see DTO validation, service orchestration, and documentation artifacts applied in production code.
 
 ---
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Looks up effective permission codes for a role within app id 1 ("self") for
+ * Looks up effective permission codes for a role across all applications for
  * use in test contexts where membership rows may not exist yet.
  *
  * Production code MUST NOT depend on this — it's a transition aid that lets
@@ -15,8 +15,6 @@ namespace App\Support;
  */
 final class TestPermissionResolver
 {
-    private const APPLICATION_ID = 1;
-
     /**
      * @return list<string>
      */
@@ -35,7 +33,6 @@ final class TestPermissionResolver
                 ->join('role_permissions rp', 'rp.role_id = r.id')
                 ->join('permissions p', 'p.id = rp.permission_id')
                 ->where('r.code', $role)
-                ->where('p.application_id', self::APPLICATION_ID)
                 ->orderBy('p.code', 'ASC')
                 ->get();
         } catch (\Throwable) {

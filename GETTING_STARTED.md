@@ -85,7 +85,7 @@ php spark key:generate
 
 # 5. Configure database in .env
 # database.default.hostname = localhost
-# database.default.database = ci4_api
+# database.default.database = ci4_website_builder_api
 # database.default.username = root
 # database.default.password = your_password
 
@@ -93,7 +93,7 @@ php spark key:generate
 php spark migrate
 
 # 7. Bootstrap first superadmin (required once)
-php spark users:bootstrap-superadmin --email superadmin@example.com --password 'StrongPass123!' --first-name Super --last-name Admin
+php spark users:bootstrap-superadmin --email admin@example.com --password 'ChangeMe123!' --first-name Admin --last-name User
 
 # 7.1 (Optional) Seed 1000 fake users for load/filter/search tests
 php spark db:seed UsersLoadTestSeeder
@@ -355,7 +355,7 @@ docker compose up -d
 # Create the first superadmin (only manual step; needs your email + password).
 docker compose exec app php spark users:bootstrap-superadmin \
   --email admin@example.com \
-  --password 'StrongPass123!' \
+  --password 'ChangeMe123!' \
   --first-name Admin \
   --last-name User
 
@@ -395,7 +395,7 @@ For production:
 
 ### Tests Failing
 - Check `phpunit.xml` database configuration
-- Ensure test database exists: `ci4_test`
+- Ensure test database exists: `ci4_website_builder_api_test`
 - Run migrations on test DB: `php spark migrate --env=testing`
 
 ### 404 on Routes

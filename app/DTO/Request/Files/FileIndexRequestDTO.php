@@ -23,6 +23,7 @@ readonly class FileIndexRequestDTO extends BaseRequestDTO
     public int $user_id;
     public ?string $search;
     public string $sort;
+    /** @var array<string, mixed> */
     public array $filter;
     public string $trashed;
 
