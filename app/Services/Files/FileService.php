@@ -8,6 +8,7 @@ use App\DTO\Request\Files\UpdateFileMetadataRequestDTO;
 use App\DTO\Response\Files\FileDownloadResponseDTO;
 use App\DTO\Response\Files\FileResponseDTO;
 use App\Interfaces\Files\BinaryIngestionInterface;
+use App\Interfaces\Files\DomainFileUsageClientInterface;
 use App\Interfaces\Files\FilePolicyServiceInterface;
 use App\Interfaces\Files\FileReferenceRepositoryInterface;
 use App\Interfaces\Files\FileRepositoryInterface;
@@ -43,7 +44,22 @@ class FileService implements FileServiceInterface
         protected FileReferenceRepositoryInterface $fileReferenceRepository,
         protected FilePolicyServiceInterface $filePolicy,
         protected BinaryIngestionInterface $binaryIngestion,
+        protected DomainFileUsageClientInterface $domainFileUsageClient,
     ) {
+    }
+
+    /**
+     * Merge Hub-owned references with references reported by the configured
+     * domain app. The local-only view cannot protect files used by CMS rows.
+     *
+     * @return array<array{source: string, resource: string, resource_id: int, label: string|null, role: string}>
+     */
+    private function collectAllUsages(int $fileId): array
+    {
+        return array_merge(
+            $this->fileReferenceRepository->getByFileId($fileId),
+            $this->domainFileUsageClient->collectUsages($fileId),
+        );
     }
 
     /**
@@ -157,15 +173,19 @@ class FileService implements FileServiceInterface
             throw new BadRequestException(lang('Files.already_trashed'));
         }
 
-        $usages = $this->fileReferenceRepository->getByFileId((int) $file->id);
+        $usages = $this->collectAllUsages((int) $file->id);
         if ($usages !== []) {
             throw new ConflictException(lang('Files.in_use', [count($usages)]));
         }
 
-        return $this->wrapInTransaction(function () use ($file, $context) {
+        $result = $this->wrapInTransaction(function () use ($file, $context) {
             $this->fileRepository->update($file->id, ['deleted_by_user_id' => $context->user_id]);
             return $this->fileRepository->delete($file->id);
         });
+
+        $this->domainFileUsageClient->broadcastInvalidate((int) $file->id);
+
+        return $result;
     }
 
     /**
@@ -201,15 +221,19 @@ class FileService implements FileServiceInterface
             throw new BadRequestException(lang('Files.not_trashed'));
         }
 
-        $usages = $this->fileReferenceRepository->getByFileId((int) $file->id);
+        $usages = $this->collectAllUsages((int) $file->id);
         if ($usages !== []) {
             throw new ConflictException(lang('Files.in_use', [count($usages)]));
         }
 
-        return $this->wrapInTransaction(function () use ($file) {
+        $result = $this->wrapInTransaction(function () use ($file) {
             $this->storage->delete($file->path);
             return $this->fileRepository->purge((int) $file->id);
         });
+
+        $this->domainFileUsageClient->broadcastInvalidate((int) $file->id);
+
+        return $result;
     }
 
     /**
@@ -230,7 +254,7 @@ class FileService implements FileServiceInterface
             $context
         );
 
-        return $this->fileReferenceRepository->getByFileId((int) $file->id);
+        return $this->collectAllUsages((int) $file->id);
     }
 
     /**
@@ -292,7 +316,10 @@ class FileService implements FileServiceInterface
         }
 
         $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
-        return $this->binaryIngestion->replace($file, $request, $visibility);
+        $result = $this->binaryIngestion->replace($file, $request, $visibility);
+        $this->domainFileUsageClient->broadcastInvalidate((int) $file->id);
+
+        return $result;
     }
 
     /**

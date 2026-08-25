@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`RequestLogModel::getStats()`** — consolidated from ~8 separate round-trips into one aggregation query plus one percentile query using window functions.
 
 ### Fixed
+- **Cross-domain file usage guard** — file deletion, purge, usage reads, and replacement now
+  include references reported by the configured CMS domain; successful mutations notify that
+  domain to invalidate stale file metadata.
 - **File public URLs** — resolve response and internal metadata URLs from the current storage
   path instead of persisting deployment hosts; existing file rows are normalized by migration
   and download responses also use the active storage driver.
