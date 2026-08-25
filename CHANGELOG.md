@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   profile, file metadata, gallery, IAM, and user fields.
 
 ### Changed
+- **Public static assets** — serve uploaded image/font variants with one-year immutable cache headers at the Apache and `.htaccess` layers.
 - **IAM persistence access** — migrated the nine IAM services from raw query-builder access to typed model finder/mutator methods and added a zero-tolerance architecture guard.
 - **Starter runtime defaults** — documented the generic Hub security contracts and aligned local
   `.env`/init/OpenAPI/CORS defaults with the `8180` kit port series.
