@@ -51,6 +51,20 @@ final class InternalFileMetaControllerTest extends ApiTestCase
         );
     }
 
+    public function testBatchMetaRejectsMoreThanTwoHundredIds(): void
+    {
+        $rawKey = $this->createActiveApiKey();
+        $query = implode('&', array_map(
+            static fn (int $id): string => 'ids[]=' . $id,
+            range(1, 201),
+        ));
+
+        $result = $this->withHeaders(['X-App-Key' => $rawKey])
+            ->get('/api/v1/internal/files/batch-meta?' . $query);
+
+        $result->assertStatus(400);
+    }
+
     private function createActiveApiKey(): string
     {
         $material = Services::apiKeyMaterialService();

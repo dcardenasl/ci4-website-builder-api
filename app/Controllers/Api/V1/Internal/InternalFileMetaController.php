@@ -7,6 +7,7 @@ namespace App\Controllers\Api\V1\Internal;
 use App\Models\FileModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use Config\Services;
+use dcardenasl\Ci4ApiCore\Exceptions\BadRequestException;
 use dcardenasl\Ci4ApiCore\Http\ApiController;
 
 /**
@@ -46,7 +47,11 @@ class InternalFileMetaController extends ApiController
                 return (object) [];
             }
 
-            $ids = array_slice($ids, 0, 200);
+            if (count($ids) > 200) {
+                throw new BadRequestException(lang('Files.max_batch_ids'), [
+                    'ids' => [lang('Files.max_batch_ids_hint')],
+                ]);
+            }
 
             /** @var FileModel $model */
             $model = model(FileModel::class);
