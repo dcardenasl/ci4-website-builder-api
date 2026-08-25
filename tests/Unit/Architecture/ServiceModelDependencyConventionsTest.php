@@ -7,42 +7,18 @@ namespace Tests\Unit\Architecture;
 use CodeIgniter\Test\CIUnitTestCase;
 
 /**
- * Guardrail to avoid growing direct Model coupling in service layer.
- *
- * Services must not import Models directly (`use App\Models\...`).
- * The eight whitelisted files below are justified exceptions (auth internals,
- * token lifecycle, system metrics) that pre-date the repository layer.
- *
- * For cross-entity queries in domain services, inject a second repository
- * via the constructor and use `findBy()`:
- *
- *   public function __construct(
- *       protected SubscriberRepository $repository,
- *       protected ProjectRepository    $projectRepository,
- *   ) {}
- *
- *   // Then: $this->projectRepository->findBy('project_key', $key)
- *
- * This keeps the service PHPStan-clean and satisfies this guardrail without
- * resorting to inline FQCNs like `model(\App\Models\ProjectModel::class)`.
+ * Guardrail against services bypassing the Model layer with raw query-builder
+ * or connection access. Services may depend on typed models; persistence
+ * queries belong in those models, where they can be named and tested.
  */
 class ServiceModelDependencyConventionsTest extends CIUnitTestCase
 {
-    public function testServicesUsingModelsAreExplicitlyWhitelisted(): void
+    public function testServicesDoNotBypassModelsWithRawBuilderAccess(): void
     {
         $root = rtrim((string) ROOTPATH, DIRECTORY_SEPARATOR);
         $serviceDir = $root . DIRECTORY_SEPARATOR . 'app/Services';
 
-        $allowed = [
-            'app/Services/Auth/PasswordResetService.php',
-            'app/Services/Auth/ServiceTokenService.php',
-            'app/Services/Auth/TokenIntrospectionService.php',
-            'app/Services/Auth/UserInvitationService.php',
-            'app/Services/System/MetricsService.php',
-            'app/Services/Tokens/RefreshTokenService.php',
-            'app/Services/Tokens/TokenRevocationService.php',
-            'app/Services/Tokens/TokenVersionService.php',
-        ];
+        $allowed = [];
         sort($allowed);
 
         $found = [];
@@ -58,7 +34,20 @@ class ServiceModelDependencyConventionsTest extends CIUnitTestCase
                 continue;
             }
 
-            if (preg_match('/^use\s+App\\\\Models\\\\/m', $source) !== 1) {
+            // Ignore comments and string literals so this guard only inspects
+            // executable service code.
+            $code = '';
+            foreach (token_get_all($source) as $token) {
+                if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT, T_CONSTANT_ENCAPSED_STRING], true)) {
+                    continue;
+                }
+                $code .= is_array($token) ? $token[1] : $token;
+            }
+
+            $bypassesModels = preg_match('/->\s*table\s*\(/', $code) === 1
+                || preg_match('/\\\\?Database\s*::\s*connect\s*\(/', $code) === 1;
+
+            if (! $bypassesModels) {
                 continue;
             }
 
@@ -70,8 +59,8 @@ class ServiceModelDependencyConventionsTest extends CIUnitTestCase
         $this->assertSame(
             $allowed,
             $found,
-            "Services with direct Model imports changed.\n" .
-            'Prefer repositories/interfaces and update this whitelist only for justified exceptions.'
+            "Services with raw query-builder/DB access changed.\n" .
+            'Extend the relevant Model with a finder/mutator instead of using $db->table()/Database::connect() directly.'
         );
     }
 }
