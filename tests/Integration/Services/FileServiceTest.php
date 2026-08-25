@@ -57,6 +57,8 @@ class FileServiceTest extends CIUnitTestCase
         $this->mockAuditService = $this->createMock(AuditServiceInterface::class);
         $this->mockFilePolicy = $this->createMock(\App\Interfaces\Files\FilePolicyServiceInterface::class);
         $this->mockFilePolicy->method('resolveUploadVisibility')->willReturn('private');
+        $this->mockFilePolicy->method('canRead')->willReturn(true);
+        $this->mockFilePolicy->method('canUpload')->willReturn(true);
         $this->mockFilePolicy->method('shouldScopeListingsToOwner')->willReturn(true);
         $this->mockFilePolicy->method('canBypassOwnershipForRead')->willReturn(false);
         $this->mockFilePolicy->method('canAccessFile')->willReturnCallback(
