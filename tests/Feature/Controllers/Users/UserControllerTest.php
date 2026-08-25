@@ -43,6 +43,19 @@ class UserControllerTest extends ApiTestCase
         $this->assertEquals('success', $json['status']);
     }
 
+    public function testListUsersSupportsBoundedListProjection(): void
+    {
+        $result = $this->get('/api/v1/users?projection=list&per_page=20');
+
+        $result->assertStatus(200);
+        $json = $this->getResponseJson($result);
+        $this->assertSame('success', $json['status']);
+        $this->assertIsArray($json['data'] ?? null);
+        $this->assertArrayHasKey('total', $json['meta'] ?? []);
+        $this->assertArrayHasKey('page', $json['meta'] ?? []);
+        $this->assertArrayHasKey('per_page', $json['meta'] ?? []);
+    }
+
     public function testAdminDashboardSummaryReturnsStableEnvelope(): void
     {
         $result = $this->get('/api/v1/admin/dashboard/summary');
