@@ -20,7 +20,7 @@ trait TokenSecurityServices
             throw new \LogicException(
                 'Missing app.baseURL in .env. '
                 . 'This is used as the JWT token issuer claim. '
-                . 'Example: app.baseURL=http://localhost:8080'
+                . 'Example: app.baseURL=http://localhost:8180'
             );
         }
 

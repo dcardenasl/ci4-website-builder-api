@@ -20,7 +20,7 @@ For cross-repo context (current milestone, blocked tasks), read `../TASKS.md`.
 
 ### Development Server
 ```bash
-php spark serve                  # Start dev server at http://localhost:8080
+php spark serve                  # Start dev server at http://localhost:8180
 ```
 
 ### Testing
@@ -104,6 +104,22 @@ Role assignment to users happens directly through the **Users** module (`/api/v1
 
 - `PATCH /api/v1/auth/me` — self-update endpoint. Authenticated user only. Allowlist: `first_name`, `last_name`, `avatar_url`. Email/password/role assignments are not part of the DTO and are silently ignored if sent. Subject id comes from the JWT, never the body.
 - `PUT /api/v1/users/{id}` — admin endpoint. Gated by `permission:users.write`. Still rejects self-edit (`assertNotSelf`) and operating on superadmins by non-superadmins (`assertCanActOnSubject`). **Email change requires superadmin** — anything else gets `403 Iam.cannotModifyEmail` (enforced in `UpdateUserAction::execute`).
+
+### Generic security contracts
+
+The starter keeps these cross-site behaviors in the Hub and treats them as reusable
+contracts, not business features:
+
+- Request DTOs preserve an explicitly submitted `null` when a nullable field is
+  intentionally cleared; omitted fields remain omitted for partial updates.
+- Refresh tokens rotate within a family. Reuse or revocation of one token revokes
+  the complete family, and a successful rotation invalidates the previous token.
+- File metadata authorization is centralized in the shared policy used by single
+  and batch metadata endpoints; callers cannot bypass ownership/app-key checks by
+  switching endpoint shape.
+- Custom roles compose the baseline `user` permission set before their explicit
+  grants, so a custom role does not accidentally lose the minimum authenticated
+  user contract.
 
 When scaffolding new modules, `vendor/bin/make-crud.sh` emits the protected route filters configured in `app/Config/Scaffolding.php`. The default `protectedRouteFilters` is `['jwtauth', 'permission:iam.superadmin-access', 'throttle']`. The legacy `iam.admin-access` was removed in May 2026.
 
@@ -226,7 +242,7 @@ In non-TTY environments (Claude Code, CI/CD, parallel calls), `php spark make:cr
 Adding a new route file (`app/Config/Routes/v1/{domain}.php`) requires restarting `php spark serve`. Routes are not detected hot.
 
 ```bash
-pkill -f 'spark serve'; php spark serve --port 8080 &
+pkill -f 'spark serve'; php spark serve --port 8180 &
 ```
 
 ## Adding a Gallery to a Domain

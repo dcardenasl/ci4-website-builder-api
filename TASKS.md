@@ -7,19 +7,9 @@
 
 ## 🔴 En progreso
 
-### Backport de mejoras de Teatro Museo (parte Hub/API)
-
-> Plan completo (contexto, decisiones de alcance, todas las fases, todos los repos):
-> [`../docs/plans/2026-08-24-plan-backport-teatromuseo.md`](../docs/plans/2026-08-24-plan-backport-teatromuseo.md).
-> Tracker cross-repo: [`../TASKS.md`](../TASKS.md).
-
+*(vacío; el backport quedó archivado en `TASKS_ARCHIVE.md`.)*
 
 ## 🟡 Próximo
-
-### Backport de mejoras de Teatro Museo — fases posteriores (parte Hub/API)
-
-- [ ] **BACKPORT-02-api — Fase 2:** el Hub expone la identidad M2M (`hub.appCode`/`hub.apiKey`) que
-      consumirá el nuevo BFF opcional. Ver plan §Fase 2.
 
 ## ⚪ Backlog
 

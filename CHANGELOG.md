@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   profile, file metadata, gallery, IAM, and user fields.
 
 ### Changed
+- **Starter runtime defaults** — documented the generic Hub security contracts and aligned local
+  `.env`/init/OpenAPI/CORS defaults with the `8180` kit port series.
 - **`RequestLogModel::getStats()`** — consolidated from ~8 separate round-trips into one aggregation query plus one percentile query using window functions.
 
 ### Fixed

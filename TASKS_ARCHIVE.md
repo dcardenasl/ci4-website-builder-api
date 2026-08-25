@@ -18,6 +18,12 @@
   scanner fail-closed, refresh-token por familia con detección de reuso, `auth_token_version` y
   composición genérica de roles; verificado con `composer quality`.
 
+## ✅ Backport de mejoras de Teatro Museo — Fase 2 y 5 (2026-08-25)
+
+- **BACKPORT-02-api** — se verificó que el Hub expone la identidad M2M genérica (`hub.appCode`/
+  `hub.apiKey`) consumida por el BFF opcional; Fase 5 documentó los defaults de runtime y contratos
+  de seguridad del starter.
+
 ---
 
 ## ✅ Refactorización y hardening (2026-05-26)
