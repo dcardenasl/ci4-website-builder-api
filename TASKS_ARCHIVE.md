@@ -24,6 +24,10 @@
   `hub.apiKey`) consumida por el BFF opcional; Fase 5 documentó los defaults de runtime y contratos
   de seguridad del starter.
 
+## ✅ Remediación de huecos profundos — GAP-01-api (2026-08-25)
+
+- **GAP-01-api** — cerrados los 14 ítems aplicables de Fase 1; FTP quedó diferido explícitamente por no tener consumidor ni hosting asumido. Commits: `8e4f80b`, `debe58c`, `30dfaa2`, `fa2148c`, `3cc7b58`, `b245959`, `b1acabb`, `eb15dcc`, `922ccc5`, `04ca6c6`, `3d82887`, `1667314`, `cb16c25`, `84b4153`.
+
 ---
 
 ## ✅ Refactorización y hardening (2026-05-26)

@@ -7,7 +7,11 @@
 
 ## 🔴 En progreso
 
-*(vacío; el backport quedó archivado en `TASKS_ARCHIVE.md`.)*
+### Remediación de huecos profundos (parte Hub/API)
+
+> Plan completo: [`../docs/plans/2026-08-25-plan-remediacion-huecos-profundos.md`](../docs/plans/2026-08-25-plan-remediacion-huecos-profundos.md).
+> Auditoría origen: [`../docs/audits/2026-08-25-auditoria-profunda-backport-git-history.md`](../docs/audits/2026-08-25-auditoria-profunda-backport-git-history.md).
+> Tracker cross-repo: [`../TASKS.md`](../TASKS.md).
 
 ## 🟡 Próximo
 
