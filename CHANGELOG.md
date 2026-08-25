@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   profile, file metadata, gallery, IAM, and user fields.
 
 ### Changed
+- **File policy configuration** — removed the obsolete `FILES_USER_SCOPED` example; `FILE_USER_SCOPED_FILES` is the single supported setting.
 - **Runtime logging configuration** — map `LOG_LEVEL` to CodeIgniter thresholds and skip request-logging filter dispatch when request logging is explicitly disabled.
 - **Runtime performance configuration** — added opt-in APCu caching with a file fallback and enabled persistent database connections only in production.
 - **Public static assets** — serve uploaded image/font variants with one-year immutable cache headers at the Apache and `.htaccess` layers.
