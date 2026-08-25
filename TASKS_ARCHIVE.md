@@ -5,6 +5,15 @@
 
 ---
 
+## ✅ Backport de mejoras de Teatro Museo — Fase 0 y CVE (2026-08-25)
+
+- **BACKPORT-00-api** — `ci4-api-core` 1.5.1, `LocalDriver` con visibilidad explícita y métricas
+  de requests agregadas con `getDashboardStats()`; verificado con `composer quality`.
+- **BACKPORT-CVE-api** — CI4 4.7.4 y Guzzle 7.15.5; guards de tipo compatibles con el stub de
+  `getJSON()` y `composer audit` limpio; verificado con `composer quality`.
+
+---
+
 ## ✅ Refactorización y hardening (2026-05-26)
 
 | ID | Descripción | Estado |
