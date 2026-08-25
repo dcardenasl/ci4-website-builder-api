@@ -50,6 +50,16 @@ class FileController extends ApiController
     }
 
     /**
+     * Return the cached lightweight manifest used by file picker consumers.
+     */
+    public function pickerManifest(): ResponseInterface
+    {
+        return $this->handleRequest(
+            fn ($dto, $context) => $this->fileService->pickerManifest($context)
+        );
+    }
+
+    /**
      * Upload a new file
      */
     public function upload(): ResponseInterface

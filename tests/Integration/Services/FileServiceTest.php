@@ -105,6 +105,7 @@ class FileServiceTest extends CIUnitTestCase
             $this->mockFilePolicy,
             $binaryIngestion,
             $this->mockDomainFileUsageClient,
+            new \App\Libraries\Files\FilePickerManifestCache(cache()),
         );
     }
 

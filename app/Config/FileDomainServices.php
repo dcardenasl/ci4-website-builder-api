@@ -35,7 +35,17 @@ trait FileDomainServices
             static::filePolicyService(),
             $binaryIngestion,
             static::domainFileUsageClient(),
+            static::filePickerManifestCache(),
         );
+    }
+
+    public static function filePickerManifestCache(bool $getShared = true): \App\Libraries\Files\FilePickerManifestCache
+    {
+        if ($getShared) {
+            return static::getSharedInstance('filePickerManifestCache');
+        }
+
+        return new \App\Libraries\Files\FilePickerManifestCache(static::cache());
     }
 
     public static function domainFileUsageClient(bool $getShared = true): \App\Interfaces\Files\DomainFileUsageClientInterface

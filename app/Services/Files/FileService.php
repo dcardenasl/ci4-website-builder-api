@@ -13,6 +13,7 @@ use App\Interfaces\Files\FilePolicyServiceInterface;
 use App\Interfaces\Files\FileReferenceRepositoryInterface;
 use App\Interfaces\Files\FileRepositoryInterface;
 use App\Interfaces\Files\FileServiceInterface;
+use App\Libraries\Files\FilePickerManifestCache;
 use App\Libraries\Files\ImageVariantProcessor;
 use App\Libraries\Storage\StorageManager;
 use App\Support\Files\FileAction;
@@ -45,6 +46,7 @@ class FileService implements FileServiceInterface
         protected FilePolicyServiceInterface $filePolicy,
         protected BinaryIngestionInterface $binaryIngestion,
         protected DomainFileUsageClientInterface $domainFileUsageClient,
+        protected FilePickerManifestCache $filePickerManifestCache,
     ) {
     }
 
@@ -75,7 +77,10 @@ class FileService implements FileServiceInterface
 
         $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
 
-        return $this->binaryIngestion->create($request, $userId, $visibility);
+        $result = $this->binaryIngestion->create($request, $userId, $visibility);
+        $this->filePickerManifestCache->invalidate();
+
+        return $result;
     }
 
     /**
@@ -123,6 +128,91 @@ class FileService implements FileServiceInterface
         );
 
         return PaginatedResponseDTO::fromArray($result);
+    }
+
+    public function pickerManifest(?SecurityContext $context = null): \App\DTO\Response\Files\FilePickerManifestResponseDTO
+    {
+        if ($context?->user_id === null || ! $this->filePolicy->canRead($context)) {
+            throw new AuthorizationException(lang('Api.unauthorized'));
+        }
+
+        $userId = (int) $context->user_id;
+        $allFiles = ! $this->filePolicy->shouldScopeListingsToOwner($context);
+        $manifest = $this->filePickerManifestCache->remember(
+            $userId,
+            $allFiles,
+            fn (): array => $this->buildPickerManifest($userId, $allFiles),
+        );
+
+        return \App\DTO\Response\Files\FilePickerManifestResponseDTO::fromArray($manifest);
+    }
+
+    /**
+     * @return array{items: list<array<string, mixed>>, total: int, version: string}
+     */
+    private function buildPickerManifest(int $userId, bool $allFiles): array
+    {
+        $model = $this->fileRepository->getModel();
+        $query = $model
+            ->select('id, original_name, mime_type, category, path, variants, width, height, size')
+            ->where('deleted_at', null)
+            ->orderBy('id', 'DESC');
+
+        if (! $allFiles) {
+            $query->where('user_id', $userId);
+        }
+
+        $entities = $query->findAll();
+        $items = [];
+        foreach ($entities as $entity) {
+            $data = $entity instanceof \App\Entities\FileEntity ? $entity->toArray() : (array) $entity;
+            $mime = (string) ($data['mime_type'] ?? '');
+            $variants = $data['variants'] ?? [];
+            if (is_string($variants)) {
+                $variants = json_decode($variants, true) ?: [];
+            }
+
+            $thumbPath = is_array($variants) && is_array($variants['thumb'] ?? null)
+                ? (string) ($variants['thumb']['path'] ?? '')
+                : '';
+            $originalPath = (string) ($data['path'] ?? '');
+            $originalUrl = $originalPath !== '' ? $this->storage->url($originalPath) : '';
+            $previewUrl = $thumbPath !== ''
+                ? $this->storage->url($thumbPath)
+                : ($mime === 'image/gif' ? $originalUrl : '');
+
+            $items[] = [
+                'id' => (int) ($data['id'] ?? 0),
+                'original_name' => (string) ($data['original_name'] ?? ''),
+                'mime_type' => $mime,
+                'category' => (string) ($data['category'] ?? ''),
+                'is_image' => str_starts_with($mime, 'image/'),
+                'human_size' => $this->humanSize((int) ($data['size'] ?? 0)),
+                'url' => $originalUrl,
+                'preview_url' => $previewUrl,
+                'width' => isset($data['width']) ? (int) $data['width'] : null,
+                'height' => isset($data['height']) ? (int) $data['height'] : null,
+            ];
+        }
+
+        return [
+            'items' => $items,
+            'total' => count($items),
+            'version' => (string) $this->filePickerManifestCache->currentVersion(),
+        ];
+    }
+
+    private function humanSize(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $value = $bytes;
+        $index = 0;
+        while ($value > 1024 && $index < count($units) - 1) {
+            $value /= 1024;
+            $index++;
+        }
+
+        return round($value, 2) . ' ' . $units[$index];
     }
 
     /**
@@ -184,6 +274,7 @@ class FileService implements FileServiceInterface
         });
 
         $this->domainFileUsageClient->broadcastInvalidate((int) $file->id);
+        $this->filePickerManifestCache->invalidate();
 
         return $result;
     }
@@ -202,7 +293,10 @@ class FileService implements FileServiceInterface
             throw new BadRequestException(lang('Files.not_trashed'));
         }
 
-        return $this->fileRepository->restore($file->id);
+        $result = $this->fileRepository->restore($file->id);
+        $this->filePickerManifestCache->invalidate();
+
+        return $result;
     }
 
     /**
@@ -232,6 +326,7 @@ class FileService implements FileServiceInterface
         });
 
         $this->domainFileUsageClient->broadcastInvalidate((int) $file->id);
+        $this->filePickerManifestCache->invalidate();
 
         return $result;
     }
@@ -294,6 +389,7 @@ class FileService implements FileServiceInterface
             'width'    => $variantResult['dimensions']['width'],
             'height'   => $variantResult['dimensions']['height'],
         ]);
+        $this->filePickerManifestCache->invalidate();
 
         return $variantResult['variants'];
     }
@@ -318,6 +414,7 @@ class FileService implements FileServiceInterface
         $visibility = $this->filePolicy->resolveUploadVisibility($request, $context);
         $result = $this->binaryIngestion->replace($file, $request, $visibility);
         $this->domainFileUsageClient->broadcastInvalidate((int) $file->id);
+        $this->filePickerManifestCache->invalidate();
 
         return $result;
     }
@@ -342,6 +439,8 @@ class FileService implements FileServiceInterface
 
         /** @var FileResponseDTO $response */
         $response = $this->responseMapper->map($updated);
+        $this->filePickerManifestCache->invalidate();
+
         return $response;
     }
 
