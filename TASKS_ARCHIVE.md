@@ -1,7 +1,7 @@
 # TASKS_ARCHIVE — ci4-api-starter
 
 > Historial de tareas completadas. Movido desde TASKS.md para mantener el tracker activo liviano.
-> Última actualización: 2026-05-26
+> Última actualización: 2026-08-25
 
 ---
 
@@ -11,6 +11,12 @@
   de requests agregadas con `getDashboardStats()`; verificado con `composer quality`.
 - **BACKPORT-CVE-api** — CI4 4.7.4 y Guzzle 7.15.5; guards de tipo compatibles con el stub de
   `getJSON()` y `composer audit` limpio; verificado con `composer quality`.
+
+## ✅ Backport de mejoras de Teatro Museo — Fase 1 (2026-08-25)
+
+- **BACKPORT-01-api** — DTOs con preservación de `null`, autorización centralizada de archivos,
+  scanner fail-closed, refresh-token por familia con detección de reuso, `auth_token_version` y
+  composición genérica de roles; verificado con `composer quality`.
 
 ---
 

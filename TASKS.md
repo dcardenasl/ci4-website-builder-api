@@ -13,11 +13,6 @@
 > [`../docs/plans/2026-08-24-plan-backport-teatromuseo.md`](../docs/plans/2026-08-24-plan-backport-teatromuseo.md).
 > Tracker cross-repo: [`../TASKS.md`](../TASKS.md).
 
-- [ ] **BACKPORT-01-api — Fase 1:** auditoría completa de `array_filter($v !== null)` en todos los
-      `*RequestDTO`; SEC-01 (`FilePolicyService` centralizado, permiso `files.admin`,
-      `VirusScannerServiceInterface` fail-closed); SEC-02 (rotación de refresh-token por familia
-      con detección de reuso, `auth_token_version`). Ver plan §Fase 1 — es la pieza de mayor valor
-      de seguridad de todo el plan.
 
 ## 🟡 Próximo
 
