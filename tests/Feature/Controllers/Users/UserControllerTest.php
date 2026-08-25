@@ -43,6 +43,35 @@ class UserControllerTest extends ApiTestCase
         $this->assertEquals('success', $json['status']);
     }
 
+    public function testAdminDashboardSummaryReturnsStableEnvelope(): void
+    {
+        $result = $this->get('/api/v1/admin/dashboard/summary');
+
+        $result->assertStatus(200);
+        $body = json_decode((string) $result->getJSON(), true);
+        $this->assertIsArray($body);
+        $this->assertIsArray($body['data'] ?? null);
+        $this->assertSame(1, $body['data']['version']);
+        $this->assertArrayHasKey('generated_at', $body['data']);
+        $this->assertArrayHasKey('sections', $body['data']);
+        $this->assertArrayHasKey('users', $body['data']['sections']);
+        $this->assertArrayHasKey('metrics', $body['data']['sections']);
+    }
+
+    public function testRegularUserDashboardSummaryDoesNotLeakRestrictedSections(): void
+    {
+        $this->actAs('user');
+
+        $result = $this->get('/api/v1/admin/dashboard/summary');
+
+        $result->assertStatus(200);
+        $body = json_decode((string) $result->getJSON(), true);
+        $sections = $body['data']['sections'] ?? [];
+        $this->assertIsArray($sections);
+        $this->assertArrayNotHasKey('users', $sections);
+        $this->assertArrayNotHasKey('metrics', $sections);
+    }
+
     public function testAdminCanCreateUpdateAndDeleteUser(): void
     {
         $createResult = $this->withBodyFormat('json')->post('/api/v1/users', [

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Permission-aware admin dashboard summary** — bounded users, files and request-stat sections are returned only when the authenticated actor has the matching read permission.
 - **Locale-aware Google pending-approval email** — the Google login endpoint accepts an optional locale and queues the subject/template in the caller's supported language.
 - **Public-site cache permissions** — seeded `system.public-cache.read` and
   `system.public-cache.invalidate` for the admin cache status and invalidation consumers.
