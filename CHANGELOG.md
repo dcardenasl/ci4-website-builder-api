@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Centralized file authorization policy** — file actions now use a closed action enum, require `files.read`/`files.write` or `files.admin` as appropriate, and no longer accept caller-controlled ownership bypass flags.
 - **`NullVirusScannerService`** — explicit placeholder scanner that fails closed when virus scanning is enabled without a real integration.
 - **Refresh-token family lifecycle** — family/parent lineage, reuse detection, per-user access-token versions, and immediate invalidation after account-wide revocation.
+- **User role composition** — custom profiles now retain the starter's baseline `user` role and its generic self/file permissions.
 - **Request DTO nullable-field preservation** — request payloads now distinguish an omitted
   nullable field from an explicit `null`, so callers can intentionally clear optional API key,
   profile, file metadata, gallery, IAM, and user fields.

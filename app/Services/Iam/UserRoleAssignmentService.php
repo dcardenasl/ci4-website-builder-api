@@ -19,6 +19,9 @@ class UserRoleAssignmentService
 {
     private const DEFAULT_USER_ROLE_CODE = 'user';
 
+    /** @var list<string> */
+    private const BASELINE_ROLE_CODES = ['user', 'admin', 'superadmin'];
+
     /**
      * @param ConnectionInterface<object, object> $db
      */
@@ -67,6 +70,7 @@ class UserRoleAssignmentService
     public function syncRoles(int $userId, $roleIds, ?int $actorId = null): void
     {
         $roleIds = array_values(array_unique(array_map('intval', $roleIds)));
+        $roleIds = $this->ensureBaselineRoleForCustomProfiles($roleIds);
 
         if ($actorId !== null) {
             $this->assertActorCanGrantRoles($actorId, $roleIds);
@@ -104,6 +108,40 @@ class UserRoleAssignmentService
         }
 
         $this->effectivePermissions->invalidateAll();
+    }
+
+    /**
+     * Custom roles are additive profiles in the starter. Preserve the
+     * baseline self/file permissions when one is selected on its own.
+     *
+     * @param list<int> $roleIds
+     * @return list<int>
+     */
+    private function ensureBaselineRoleForCustomProfiles(array $roleIds): array
+    {
+        if ($roleIds === []) {
+            return [];
+        }
+
+        $result = $this->db->table('roles')
+            ->select('code')
+            ->whereIn('id', $roleIds)
+            ->get();
+        $rows = $result !== false ? $result->getResultArray() : [];
+
+        foreach ($rows as $row) {
+            if (in_array((string) $row['code'], self::BASELINE_ROLE_CODES, true)) {
+                continue;
+            }
+
+            $baseRoleId = $this->resolveRoleIdByCode(self::DEFAULT_USER_ROLE_CODE);
+            if (! in_array($baseRoleId, $roleIds, true)) {
+                $roleIds[] = $baseRoleId;
+            }
+            break;
+        }
+
+        return array_values(array_unique($roleIds));
     }
 
     public function removeRole(int $userId, int $roleId): void
