@@ -7,11 +7,33 @@
 
 ## 🔴 En progreso
 
-*(vacío)*
+### Backport de mejoras de Teatro Museo (parte Hub/API)
+
+> Plan completo (contexto, decisiones de alcance, todas las fases, todos los repos):
+> [`../docs/plans/2026-08-24-plan-backport-teatromuseo.md`](../docs/plans/2026-08-24-plan-backport-teatromuseo.md).
+> Tracker cross-repo: [`../TASKS.md`](../TASKS.md).
+
+- [x] **BACKPORT-00-api — Fase 0:** bump `dcardenasl/ci4-api-core` v1.0.1 → v1.5.1 (fix de
+      compatibilidad en `FakeApiKeyRepository::findAll()`), `LocalDriver` con
+      `PortableVisibilityConverter` explícito, `RequestLogModel::getStats()` consolidado a queries
+      de agregación + nuevo `getDashboardStats()`. Código y tests verificados en verde;
+      **pendiente de commit**. Ver plan §Fase 0.
+- [x] **BACKPORT-CVE-api:** bump `codeigniter4/framework` → v4.7.4 y `guzzlehttp/guzzle` → 7.15.5
+      (CVEs críticos/altos de SQLi, path traversal y noncanonical host/cookie). Verificado
+      (ninguno de los comportamientos con CVE se ejercita en este código); pendiente de commit.
+      Ver plan §Remediación de CVEs.
+- [ ] **BACKPORT-01-api — Fase 1:** auditoría completa de `array_filter($v !== null)` en todos los
+      `*RequestDTO`; SEC-01 (`FilePolicyService` centralizado, permiso `files.admin`,
+      `VirusScannerServiceInterface` fail-closed); SEC-02 (rotación de refresh-token por familia
+      con detección de reuso, `auth_token_version`). Ver plan §Fase 1 — es la pieza de mayor valor
+      de seguridad de todo el plan.
 
 ## 🟡 Próximo
 
-*(vacío)*
+### Backport de mejoras de Teatro Museo — fases posteriores (parte Hub/API)
+
+- [ ] **BACKPORT-02-api — Fase 2:** el Hub expone la identidad M2M (`hub.appCode`/`hub.apiKey`) que
+      consumirá el nuevo BFF opcional. Ver plan §Fase 2.
 
 ## ⚪ Backlog
 
