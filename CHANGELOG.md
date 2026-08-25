@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`files:audit`** — read-only CLI audit that compares local upload files with original and
+  variant paths persisted in the `files` table, reporting disk/database discrepancies without
+  modifying either side.
 - **`RequestLogModel::getDashboardStats()`** — lightweight availability summary (total/successful/failed requests, error rate, availability) for the admin dashboard widget, without paying the cost of percentile/slow-request analysis it doesn't display.
 - **Centralized file authorization policy** — file actions now use a closed action enum, require `files.read`/`files.write` or `files.admin` as appropriate, and no longer accept caller-controlled ownership bypass flags.
 - **`NullVirusScannerService`** — explicit placeholder scanner that fails closed when virus scanning is enabled without a real integration.
