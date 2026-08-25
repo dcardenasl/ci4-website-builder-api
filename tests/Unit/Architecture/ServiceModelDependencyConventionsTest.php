@@ -10,7 +10,7 @@ use CodeIgniter\Test\CIUnitTestCase;
  * Guardrail to avoid growing direct Model coupling in service layer.
  *
  * Services must not import Models directly (`use App\Models\...`).
- * The six whitelisted files below are justified exceptions (auth internals,
+ * The eight whitelisted files below are justified exceptions (auth internals,
  * token lifecycle, system metrics) that pre-date the repository layer.
  *
  * For cross-entity queries in domain services, inject a second repository
@@ -36,10 +36,12 @@ class ServiceModelDependencyConventionsTest extends CIUnitTestCase
         $allowed = [
             'app/Services/Auth/PasswordResetService.php',
             'app/Services/Auth/ServiceTokenService.php',
+            'app/Services/Auth/TokenIntrospectionService.php',
             'app/Services/Auth/UserInvitationService.php',
             'app/Services/System/MetricsService.php',
             'app/Services/Tokens/RefreshTokenService.php',
             'app/Services/Tokens/TokenRevocationService.php',
+            'app/Services/Tokens/TokenVersionService.php',
         ];
         sort($allowed);
 

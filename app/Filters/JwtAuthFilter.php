@@ -19,6 +19,8 @@ use dcardenasl\Ci4ApiCore\Http\Filters\AbstractJwtAuthFilter;
  */
 class JwtAuthFilter extends AbstractJwtAuthFilter
 {
+    private ?object $decodedToken = null;
+
     protected function decodeToken(string $token): ?object
     {
         $bearer  = Services::bearerTokenService();
@@ -28,8 +30,9 @@ class JwtAuthFilter extends AbstractJwtAuthFilter
         // delegate to bearerTokenService::extractFromHeader for the format
         // check inside `extractBearerToken()`. Decoding is direct.
         $decoded = $service->decode($token);
+        $this->decodedToken = is_object($decoded) ? $decoded : null;
 
-        return is_object($decoded) ? $decoded : null;
+        return $this->decodedToken;
     }
 
     protected function extractBearerToken(string $authHeader): ?string
@@ -52,7 +55,16 @@ class JwtAuthFilter extends AbstractJwtAuthFilter
         $userModel = Services::userModel(false);
         $user      = $userModel->find($userId);
 
-        return is_object($user) ? $user : null;
+        if (! is_object($user)) {
+            return null;
+        }
+
+        $tokenVersion = isset($this->decodedToken->token_version)
+            ? (int) $this->decodedToken->token_version
+            : 0;
+        $currentVersion = max(0, (int) ($user->auth_token_version ?? 0));
+
+        return $tokenVersion === $currentVersion ? $user : null;
     }
 
     protected function requireActorOnUserToken(): bool

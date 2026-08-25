@@ -30,4 +30,7 @@ return [
     'invalidRequest'        => 'Invalid request',
     'notFound'              => 'Not found',
     'userNotFound'          => 'User not found',
+    'accessTokenVersionUserNotFound' => 'User for access-token version was not found',
+    'accessTokenVersionInvalidUserId' => 'A valid user ID is required to increment the access-token version',
+    'accessTokenVersionIncrementFailed' => 'Failed to increment the access-token version',
 ];

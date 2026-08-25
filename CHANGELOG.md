@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`RequestLogModel::getDashboardStats()`** — lightweight availability summary (total/successful/failed requests, error rate, availability) for the admin dashboard widget, without paying the cost of percentile/slow-request analysis it doesn't display.
 - **Centralized file authorization policy** — file actions now use a closed action enum, require `files.read`/`files.write` or `files.admin` as appropriate, and no longer accept caller-controlled ownership bypass flags.
 - **`NullVirusScannerService`** — explicit placeholder scanner that fails closed when virus scanning is enabled without a real integration.
+- **Refresh-token family lifecycle** — family/parent lineage, reuse detection, per-user access-token versions, and immediate invalidation after account-wide revocation.
 - **Request DTO nullable-field preservation** — request payloads now distinguish an omitted
   nullable field from an explicit `null`, so callers can intentionally clear optional API key,
   profile, file metadata, gallery, IAM, and user fields.
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`UpdateFileMetadataRequestDTO`** — accept an explicit `null` metadata field as a valid clear
   operation instead of treating it as an empty update.
 - **File upload policy** — simulated ClamAV scans can no longer report unscanned files as safe.
+- **Refresh-token revocation cache** — negative cache entries are no longer stored, so a newly revoked access token cannot be hidden by a stale negative result.
 
 ### Changed
 - **`dcardenasl/ci4-api-core`** — bumped constraint from `^1.0` to `^1.5`; adjusted `ApiKeyRepositoryInterface::findAll()`'s test double for the package's updated signature (`?int $limit = null`).

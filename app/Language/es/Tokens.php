@@ -30,4 +30,7 @@ return [
     'invalidRequest'        => 'Solicitud inválida',
     'notFound'              => 'No encontrado',
     'userNotFound'          => 'Usuario no encontrado',
+    'accessTokenVersionUserNotFound' => 'No se encontró el usuario de la versión del token de acceso',
+    'accessTokenVersionInvalidUserId' => 'Se requiere un ID de usuario válido para incrementar la versión del token de acceso',
+    'accessTokenVersionIncrementFailed' => 'No se pudo incrementar la versión del token de acceso',
 ];
