@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Public-site cache permissions** — seeded `system.public-cache.read` and
+  `system.public-cache.invalidate` for the admin cache status and invalidation consumers.
 - **Cached file picker manifest** — lightweight metadata/preview endpoint with mutation-aware version invalidation.
 - **`files:audit`** — read-only CLI audit that compares local upload files with original and
   variant paths persisted in the `files` table, reporting disk/database discrepancies without
