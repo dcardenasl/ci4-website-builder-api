@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`RequestLogModel::getDashboardStats()`** — lightweight availability summary (total/successful/failed requests, error rate, availability) for the admin dashboard widget, without paying the cost of percentile/slow-request analysis it doesn't display.
+
+### Changed
+- **`RequestLogModel::getStats()`** — consolidated from ~8 separate round-trips into one aggregation query plus one percentile query using window functions.
+
+### Fixed
+- **`LocalDriver`** — use an explicit `PortableVisibilityConverter` instead of relying on Flysystem's implicit default, so stored file permissions are predictable.
+
+### Changed
+- **`dcardenasl/ci4-api-core`** — bumped constraint from `^1.0` to `^1.5`; adjusted `ApiKeyRepositoryInterface::findAll()`'s test double for the package's updated signature (`?int $limit = null`).
+
+### Security
+- **`codeigniter4/framework`** — bumped to v4.7.4, closing CVE-2026-63221 (critical, SQLi in `deleteBatch()`), CVE-2026-63222 (high, path traversal in `UploadedFile::move()`), and CVE-2026-63220 (medium, header spoofing in `isSecure()`).
+- **`guzzlehttp/guzzle`** — bumped to 7.15.5 (transitive via `aws/aws-sdk-php`, `google/apiclient`, `google/auth`), closing CVE-2026-69246/69245. None of the affected code paths are exercised by this app; verified via `composer audit`.
+
 ## [1.0.0] — 2026-07-23
 
 ### Added
