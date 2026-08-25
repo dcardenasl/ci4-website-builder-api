@@ -134,7 +134,10 @@ class FileService implements FileServiceInterface
         $userId = $this->resolveUserId($request, $context);
         $file = $this->findFileAndAuthorize($request->id, $userId, FileAction::DOWNLOAD, $context);
 
-        return FileDownloadResponseDTO::fromArray($file->toArray());
+        $data = $file->toArray();
+        $data['url'] = $this->storage->url((string) $file->path);
+
+        return FileDownloadResponseDTO::fromArray($data);
     }
 
     /**

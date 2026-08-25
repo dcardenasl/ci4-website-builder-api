@@ -52,9 +52,7 @@ trait FileDomainServices
             return static::getSharedInstance('fileResponseMapper');
         }
 
-        return new \dcardenasl\Ci4ApiCore\Mappers\DtoResponseMapper(
-            \App\DTO\Response\Files\FileResponseDTO::class
-        );
+        return new \App\Mappers\Files\FileResponseMapper(static::storageManager());
     }
 
     public static function virusScannerService(bool $getShared = true): \App\Interfaces\Files\VirusScannerServiceInterface

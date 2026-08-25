@@ -147,6 +147,12 @@ class StorageManagerTest extends CIUnitTestCase
         $this->assertEquals('http://example.com/test.txt', $result);
     }
 
+    public function testRelativeUrlDoesNotPersistDeploymentHost(): void
+    {
+        $this->assertSame('/uploads/2026/08/25/test.txt', $this->storage->relativeUrl('2026/08/25/test.txt'));
+        $this->assertSame('/uploads/2026/08/25/test.txt', $this->storage->relativeUrl('/2026/08/25/test.txt'));
+    }
+
     public function testSizeDelegatesToDriver(): void
     {
         $driver = $this->createMock(\App\Libraries\Storage\StorageDriverInterface::class);

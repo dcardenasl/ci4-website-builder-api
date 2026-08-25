@@ -65,10 +65,12 @@ class FileServiceTest extends CIUnitTestCase
             static fn (\App\Entities\FileEntity $file, int $userId): bool => (int) $file->user_id === $userId
         );
 
+        $this->mockStorage
+            ->method('relativeUrl')
+            ->willReturnCallback(static fn (string $path): string => '/uploads/' . ltrim($path, '/'));
+
         // Inject real processors and a deterministic storage key generator.
-        $responseMapper = new \dcardenasl\Ci4ApiCore\Mappers\DtoResponseMapper(
-            \App\DTO\Response\Files\FileResponseDTO::class
-        );
+        $responseMapper = new \App\Mappers\Files\FileResponseMapper($this->mockStorage);
 
         $mockVariantProcessor = $this->createMock(\App\Libraries\Files\ImageVariantProcessor::class);
         $mockVariantProcessor->method('generate')
@@ -446,13 +448,17 @@ class FileServiceTest extends CIUnitTestCase
             ->method('find')
             ->willReturn($file);
 
+        $this->mockStorage
+            ->method('url')
+            ->willReturn('https://storage.example/uploads/2024/01/01/myfile.pdf');
+
         $request = new \App\DTO\Request\Files\FileGetRequestDTO(['id' => 1, 'user_id' => 1], service('validation'));
         $result = $this->service->download($request);
         $payload = $result->toArray();
 
         $this->assertInstanceOf(\App\DTO\Response\Files\FileDownloadResponseDTO::class, $result);
         $this->assertEquals('myfile.pdf', $payload['original_name']);
-        $this->assertEquals('http://example.com/myfile.pdf', $payload['url']);
+        $this->assertEquals('https://storage.example/uploads/2024/01/01/myfile.pdf', $payload['url']);
     }
 
     // ==================== DESTROY TESTS ====================
