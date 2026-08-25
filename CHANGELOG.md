@@ -9,12 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **`RequestLogModel::getDashboardStats()`** — lightweight availability summary (total/successful/failed requests, error rate, availability) for the admin dashboard widget, without paying the cost of percentile/slow-request analysis it doesn't display.
+- **Request DTO nullable-field preservation** — request payloads now distinguish an omitted
+  nullable field from an explicit `null`, so callers can intentionally clear optional API key,
+  profile, file metadata, gallery, IAM, and user fields.
 
 ### Changed
 - **`RequestLogModel::getStats()`** — consolidated from ~8 separate round-trips into one aggregation query plus one percentile query using window functions.
 
 ### Fixed
 - **`LocalDriver`** — use an explicit `PortableVisibilityConverter` instead of relying on Flysystem's implicit default, so stored file permissions are predictable.
+- **`UpdateFileMetadataRequestDTO`** — accept an explicit `null` metadata field as a valid clear
+  operation instead of treating it as an empty update.
 
 ### Changed
 - **`dcardenasl/ci4-api-core`** — bumped constraint from `^1.0` to `^1.5`; adjusted `ApiKeyRepositoryInterface::findAll()`'s test double for the package's updated signature (`?int $limit = null`).

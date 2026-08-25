@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Files;
 
+use App\DTO\Request\Support\TracksProvidedFields;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use dcardenasl\Ci4ApiCore\Exceptions\BadRequestException;
 
 readonly class UpdateFileMetadataRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     public ?string $original_name;
     public ?string $alt_text;
     public ?string $caption;
@@ -28,8 +31,9 @@ readonly class UpdateFileMetadataRequestDTO extends BaseRequestDTO
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $knownFields = ['original_name', 'alt_text', 'caption', 'credit', 'category'];
-        $provided = array_filter($knownFields, fn ($f) => array_key_exists($f, $data) && $data[$f] !== null && $data[$f] !== '');
+        $provided = array_filter($knownFields, fn (string $field): bool => array_key_exists($field, $data));
 
         if ($provided === []) {
             throw new BadRequestException(lang('Files.metadata_no_fields'));
@@ -44,12 +48,12 @@ readonly class UpdateFileMetadataRequestDTO extends BaseRequestDTO
 
     public function toArray(): array
     {
-        return array_filter([
+        return $this->filterProvidedFields([
             'original_name' => $this->original_name,
             'alt_text'      => $this->alt_text,
             'caption'       => $this->caption,
             'credit'        => $this->credit,
             'category'      => $this->category,
-        ], fn ($v) => $v !== null);
+        ]);
     }
 }

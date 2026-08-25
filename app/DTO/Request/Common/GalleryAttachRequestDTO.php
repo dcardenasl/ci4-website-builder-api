@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Common;
 
+use App\DTO\Request\Support\TracksProvidedFields;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use OpenApi\Attributes as OA;
 
@@ -14,6 +15,8 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(schema: 'GalleryAttachRequest')]
 readonly class GalleryAttachRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     public string $file_id;
     public ?int $sort_order;
     public ?bool $is_active;
@@ -29,6 +32,7 @@ readonly class GalleryAttachRequestDTO extends BaseRequestDTO
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $this->file_id    = (string) ($data['file_id'] ?? '');
         $this->sort_order = isset($data['sort_order']) ? (int) $data['sort_order'] : null;
         $this->is_active  = isset($data['is_active']) ? (bool) $data['is_active'] : null;
@@ -36,10 +40,10 @@ readonly class GalleryAttachRequestDTO extends BaseRequestDTO
 
     public function toArray(): array
     {
-        return array_filter([
+        return $this->filterProvidedFields([
             'file_id'    => $this->file_id,
             'sort_order' => $this->sort_order,
             'is_active'  => $this->is_active,
-        ], static fn ($v) => $v !== null);
+        ]);
     }
 }

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Iam;
 
+use App\DTO\Request\Support\TracksProvidedFields;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(schema: 'RoleUpdateRequest')]
 readonly class RoleUpdateRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     #[OA\Property(description: 'Application id; null for global roles', type: 'integer', nullable: true)]
     public ?int $application_id;
     #[OA\Property(description: 'Role code (unique within application)', type: 'string', nullable: true)]
@@ -45,6 +48,7 @@ readonly class RoleUpdateRequestDTO extends BaseRequestDTO
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $this->application_id = isset($data['application_id']) ? (int) $data['application_id'] : null;
         $this->code = isset($data['code']) ? (string) $data['code'] : null;
         $this->name = isset($data['name']) ? (string) $data['name'] : null;
@@ -62,12 +66,12 @@ readonly class RoleUpdateRequestDTO extends BaseRequestDTO
         // global). The DTO field remains for API/back-compat, but never persists.
         // permission_ids is excluded — handled by RoleService::update via
         // RolePermissionAssignmentService, not by the roles repository.
-        return array_filter([
+        return $this->filterProvidedFields([
             'code' => $this->code,
             'name' => $this->name,
             'description' => $this->description,
             'is_system' => $this->is_system,
-        ], fn ($v) => $v !== null);
+        ]);
     }
 
     /**
