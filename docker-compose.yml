@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ci4-api-app
+    container_name: ${API_APP_CONTAINER_NAME:-ci4-api-app}
     restart: unless-stopped
     ports:
       - "${API_HOST_PORT:-8080}:80"
@@ -37,7 +37,7 @@ services:
   # MySQL Database
   db:
     image: mysql:8.0
-    container_name: ci4-api-db
+    container_name: ${API_DB_CONTAINER_NAME:-ci4-api-db}
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-ci4_root_password}
@@ -61,7 +61,7 @@ services:
   # phpMyAdmin (optional — enable with `docker compose --profile tools up`)
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: ci4-api-phpmyadmin
+    container_name: ${API_PHPMYADMIN_CONTAINER_NAME:-ci4-api-phpmyadmin}
     restart: unless-stopped
     ports:
       - "${PHPMYADMIN_HOST_PORT:-8081}:80"
@@ -86,10 +86,10 @@ services:
 # are running.
 networks:
   ci4-platform:
-    name: ci4-platform
+    name: ${API_NETWORK_NAME:-ci4-platform}
 
 volumes:
   mysql-data:
-    name: ci4-mysql-data
+    name: ${API_MYSQL_VOLUME_NAME:-ci4-mysql-data}
   api-env:
-    name: ci4-api-env
+    name: ${API_ENV_VOLUME_NAME:-ci4-api-env}
