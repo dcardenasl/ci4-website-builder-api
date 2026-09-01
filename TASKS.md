@@ -19,6 +19,9 @@
 
 - [ ] **API-012 — Docker out-of-the-box:** validar la orquestación cross-repo en `ci4-kickstart`
   después de la idempotencia de `docker/entrypoint.sh`.
+  **Estado al 2026-09-01:** el API falla ante errores de migración/seeder y Compose acepta
+  nombres aislados para E2E; Kickstart ya comprueba `/ping`, Swagger, migraciones, bootstrap,
+  reinicio y limpieza. Falta ejecutar el flujo con un daemon Docker real en CI.
 
 ## ⚠️ Señales de activación
 
