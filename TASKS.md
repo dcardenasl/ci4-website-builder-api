@@ -15,6 +15,15 @@
 
 ## 🟡 Próximo
 
+### CNV-007 — Editor visual (canvas): port del hub
+
+> Verificación de arranque en
+> [`../ci4-website-suite/docs/plan/2026-09-09-editor-visual-canvas-port-f7.md`](../ci4-website-suite/docs/plan/2026-09-09-editor-visual-canvas-port-f7.md).
+
+- [ ] **CNV-007-H1 — `roles.ui_mode`.** Columna `VARCHAR(10)` con default `full` (no ENUM, por
+      portabilidad), en `allowedFields`, DTOs de rol y validación de dominio. La tabla tiene la misma
+      forma que la de la suite y ya recibió una columna por migración, así que adapta directo.
+
 ## ⚪ Backlog
 
 - [ ] **API-012 — Docker out-of-the-box:** validar la orquestación cross-repo en `ci4-kickstart`
