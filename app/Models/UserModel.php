@@ -41,6 +41,7 @@ class UserModel extends BaseAuditableModel
         'oauth_provider',
         'oauth_provider_id',
         'avatar_url',
+        'auth_token_version',
         'email_verification_token',
         'verification_token_expires',
         'email_verified_at',
@@ -89,5 +90,16 @@ class UserModel extends BaseAuditableModel
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    /**
+     * Atomically advance the per-user JWT invalidation version.
+     */
+    public function incrementAuthTokenVersion(int $userId): bool
+    {
+        return $this->builder()
+            ->where('id', $userId)
+            ->set('auth_token_version', 'auth_token_version + 1', false)
+            ->update();
+    }
 
 }

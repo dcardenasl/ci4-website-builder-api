@@ -153,6 +153,44 @@ class AuthControllerTest extends ApiTestCase
         $this->assertArrayHasKey('user', $json['data']);
     }
 
+    public function testGoogleLoginQueuesPendingEmailInRequestedLocale(): void
+    {
+        $email = 'google-locale@example.com';
+        $this->injectGoogleIdentityMock([
+            'provider' => 'google',
+            'provider_id' => 'google-locale',
+            'email' => $email,
+            'first_name' => 'Locale',
+            'last_name' => 'User',
+            'avatar_url' => null,
+            'claims' => [],
+        ]);
+
+        $mock = $this->createMock(EmailServiceInterface::class);
+        $mock->expects($this->once())
+            ->method('queueTemplate')
+            ->with(
+                'pending-approval-google',
+                $email,
+                $this->callback(function (array $data): bool {
+                    $this->assertSame('es', $data['locale'] ?? null);
+                    $this->assertSame('Tu cuenta está pendiente de aprobación', $data['subject'] ?? null);
+
+                    return true;
+                })
+            )
+            ->willReturn(1);
+        \Config\Services::injectMock('emailService', $mock);
+
+        $result = $this->withBodyFormat('json')
+            ->post('/api/v1/auth/google-login', [
+                'id_token' => 'google.id.token',
+                'locale' => 'es',
+            ]);
+
+        $result->assertStatus(202);
+    }
+
     // ==================== HELPERS ====================
 
     private function injectGoogleIdentityMock(array $identityData): void

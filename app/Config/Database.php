@@ -34,7 +34,9 @@ class Database extends Config
         'database'    => 'ci4_website_builder_api',
         'DBDriver'    => 'MySQLi',
         'DBPrefix'    => '',
-        'pConnect'    => false,
+        // Reuse MySQL connections in production; keep local development and
+        // tests isolated from persistent connection state.
+        'pConnect'    => ENVIRONMENT === 'production',
         'DBDebug'     => ENVIRONMENT !== 'production',
         'charset'     => 'utf8mb4',
         'DBCollat'    => 'utf8mb4_general_ci',

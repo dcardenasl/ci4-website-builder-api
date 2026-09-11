@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Response\Users;
 
+use App\Enums\UiMode;
 use dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface;
 use OpenApi\Attributes as OA;
 
@@ -37,7 +38,7 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
         public ?string $created_at = null,
         #[OA\Property(property: 'updated_at', description: 'Last update timestamp', example: '2026-02-26 12:00:00', nullable: true)]
         public ?string $updated_at = null,
-        /** @var list<array{id:int, code:string, name:string}> */
+        /** @var list<array{id:int, code:string, name:string, ui_mode:string}> */
         #[OA\Property(
             description: 'Global roles assigned to this user.',
             type: 'array',
@@ -47,6 +48,7 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
                     new OA\Property(property: 'id', type: 'integer'),
                     new OA\Property(property: 'code', type: 'string'),
                     new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'ui_mode', type: 'string', enum: ['full', 'simple']),
                 ]
             )
         )]
@@ -69,7 +71,9 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
             $updated_at = $updated_at->format('Y-m-d H:i:s');
         }
 
-        $roles = self::resolveRoles((int) ($data['id'] ?? 0));
+        $roles = is_array($data['roles'] ?? null)
+            ? array_values($data['roles'])
+            : self::resolveRoles((int) ($data['id'] ?? 0));
 
         return new self(
             id: (int) ($data['id'] ?? 0),
@@ -100,7 +104,7 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
     }
 
     /**
-     * @return list<array{id:int, code:string, name:string}>
+     * @return list<array{id:int, code:string, name:string, ui_mode:string}>
      */
     private static function resolveRoles(int $userId): array
     {
@@ -111,7 +115,7 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
         try {
             $result = \Config\Database::connect()
                 ->table('user_roles ur')
-                ->select('r.id, r.code, r.name')
+                ->select('r.id, r.code, r.name, r.ui_mode')
                 ->join('roles r', 'r.id = ur.role_id')
                 ->where('ur.user_id', $userId)
                 ->orderBy('r.name', 'ASC')
@@ -125,6 +129,7 @@ readonly class UserResponseDTO implements DataTransferObjectInterface
             'id'   => (int) $r['id'],
             'code' => (string) $r['code'],
             'name' => (string) $r['name'],
+            'ui_mode' => UiMode::fromMixed($r['ui_mode'] ?? null)->value,
         ], $rows));
     }
 }

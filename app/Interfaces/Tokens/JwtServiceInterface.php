@@ -16,7 +16,7 @@ interface JwtServiceInterface
      *
      * @param list<string> $permissions Effective permission codes; encoded as the `scope` claim.
      */
-    public function encode(int $userId, $permissions = []): string;
+    public function encode(int $userId, $permissions = [], int $tokenVersion = 0): string;
 
     /**
      * Generate a service (machine-to-machine) JWT.

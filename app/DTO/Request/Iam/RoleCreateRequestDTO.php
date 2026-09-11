@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Iam;
 
+use App\Enums\UiMode;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use OpenApi\Attributes as OA;
 
@@ -20,6 +21,8 @@ readonly class RoleCreateRequestDTO extends BaseRequestDTO
     public string $description;
     #[OA\Property(description: 'System role (cannot be deleted)', type: 'boolean')]
     public bool $is_system;
+    #[OA\Property(description: 'Panel presentation mode. This grants no permissions.', type: 'string', enum: ['full', 'simple'])]
+    public string $ui_mode;
 
     /** @var list<int>|null */
     #[OA\Property(
@@ -39,6 +42,7 @@ readonly class RoleCreateRequestDTO extends BaseRequestDTO
             'name' => 'required|string|max_length[100]',
             'description' => 'permit_empty|string',
             'is_system' => 'permit_empty|in_list[0,1]',
+            'ui_mode' => 'permit_empty|in_list[full,simple]',
             'permission_ids' => 'permit_empty',
         ];
     }
@@ -50,6 +54,7 @@ readonly class RoleCreateRequestDTO extends BaseRequestDTO
         $this->name = (string) ($data['name'] ?? '');
         $this->description = (string) ($data['description'] ?? '');
         $this->is_system = (bool) ($data['is_system'] ?? false);
+        $this->ui_mode = UiMode::fromMixed($data['ui_mode'] ?? null)->value;
         $this->permission_ids = array_key_exists('permission_ids', $data)
             ? self::normalizePermissionIds($data['permission_ids'])
             : null;
@@ -67,6 +72,7 @@ readonly class RoleCreateRequestDTO extends BaseRequestDTO
             'name' => $this->name,
             'description' => $this->description,
             'is_system' => $this->is_system,
+            'ui_mode' => $this->ui_mode,
         ];
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Users;
 
+use App\DTO\Request\Support\TracksProvidedFields;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use OpenApi\Attributes as OA;
 
@@ -19,6 +20,8 @@ use OpenApi\Attributes as OA;
 )]
 readonly class UserUpdateRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     #[OA\Property(description: 'Updated email address', example: 'user@example.com', nullable: true)]
     public ?string $email;
 
@@ -58,6 +61,7 @@ readonly class UserUpdateRequestDTO extends BaseRequestDTO
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $this->email      = isset($data['email']) ? strtolower(trim((string) $data['email'])) : null;
         $this->first_name = $data['first_name'] ?? null;
         $this->last_name  = $data['last_name'] ?? null;
@@ -68,13 +72,13 @@ readonly class UserUpdateRequestDTO extends BaseRequestDTO
 
     public function toArray(): array
     {
-        $base = array_filter([
+        $base = $this->filterProvidedFields([
             'email'      => $this->email,
             'first_name' => $this->first_name,
             'last_name'  => $this->last_name,
             'password'   => $this->password,
             'avatar_url' => $this->avatar_url,
-        ], fn ($v) => $v !== null);
+        ]);
 
         if ($this->role_ids !== null) {
             $base['role_ids'] = $this->role_ids;

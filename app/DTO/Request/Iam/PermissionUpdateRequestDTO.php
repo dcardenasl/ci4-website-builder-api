@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Iam;
 
+use App\DTO\Request\Support\TracksProvidedFields;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(schema: 'PermissionUpdateRequest')]
 readonly class PermissionUpdateRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     #[OA\Property(description: 'application_id', type: 'integer', nullable: true)]
     public ?int $application_id;
     #[OA\Property(description: 'code', type: 'string', nullable: true)]
@@ -34,6 +37,7 @@ readonly class PermissionUpdateRequestDTO extends BaseRequestDTO
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $this->application_id = isset($data['application_id']) ? (int) $data['application_id'] : null;
         $this->code = $data['code'] ?? null;
         $this->resource = $data['resource'] ?? null;
@@ -43,12 +47,12 @@ readonly class PermissionUpdateRequestDTO extends BaseRequestDTO
 
     public function toArray(): array
     {
-        return array_filter([
+        return $this->filterProvidedFields([
             'application_id' => $this->application_id,
             'code' => $this->code,
             'resource' => $this->resource,
             'action' => $this->action,
             'description' => $this->description,
-        ], fn ($v) => $v !== null);
+        ]);
     }
 }

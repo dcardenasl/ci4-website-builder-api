@@ -1,7 +1,38 @@
 # TASKS_ARCHIVE — ci4-api-starter
 
 > Historial de tareas completadas. Movido desde TASKS.md para mantener el tracker activo liviano.
-> Última actualización: 2026-05-26
+> Última actualización: 2026-08-25
+
+## ✅ CNV-007-F9 — Reconciliación de alcance — 2026-09-11
+
+La autorización por recurso queda centralizada en Domain (`729aa89`). API/Hub sigue siendo dueño
+de identidad, roles y permisos globales, pero no replica la ACL de contenido ni agrega un modelo
+de tenant sin un requisito de producto. No hay implementación local pendiente.
+
+---
+
+## ✅ Backport de mejoras de Teatro Museo — Fase 0 y CVE (2026-08-25)
+
+- **BACKPORT-00-api** — `ci4-api-core` 1.5.1, `LocalDriver` con visibilidad explícita y métricas
+  de requests agregadas con `getDashboardStats()`; verificado con `composer quality`.
+- **BACKPORT-CVE-api** — CI4 4.7.4 y Guzzle 7.15.5; guards de tipo compatibles con el stub de
+  `getJSON()` y `composer audit` limpio; verificado con `composer quality`.
+
+## ✅ Backport de mejoras de Teatro Museo — Fase 1 (2026-08-25)
+
+- **BACKPORT-01-api** — DTOs con preservación de `null`, autorización centralizada de archivos,
+  scanner fail-closed, refresh-token por familia con detección de reuso, `auth_token_version` y
+  composición genérica de roles; verificado con `composer quality`.
+
+## ✅ Backport de mejoras de Teatro Museo — Fase 2 y 5 (2026-08-25)
+
+- **BACKPORT-02-api** — se verificó que el Hub expone la identidad M2M genérica (`hub.appCode`/
+  `hub.apiKey`) consumida por el BFF opcional; Fase 5 documentó los defaults de runtime y contratos
+  de seguridad del starter.
+
+## ✅ Remediación de huecos profundos — GAP-01-api (2026-08-25)
+
+- **GAP-01-api** — cerrados los 14 ítems aplicables de Fase 1; FTP quedó diferido explícitamente por no tener consumidor ni hosting asumido. Commits: `8e4f80b`, `debe58c`, `30dfaa2`, `fa2148c`, `3cc7b58`, `b245959`, `b1acabb`, `eb15dcc`, `922ccc5`, `04ca6c6`, `3d82887`, `1667314`, `cb16c25`, `84b4153`.
 
 ---
 
@@ -86,5 +117,18 @@
 - **CORE-001..004** — hardening de `RepositoryInterface` y `AuditServiceInterface`, boundary tipado
   de `ApiController`, implementación estricta en el starter y plantillas tipadas del scaffolder.
 
-La orquestación Docker cross-repo permanece abierta como **API-012** en el tracker activo; no se
-considera cerrada por el hecho de que el entrypoint ya sea idempotente.
+La orquestación Docker cross-repo permaneció abierta hasta el runner aislado y su E2E real de
+`a68ae08`; la entrada histórica queda cerrada en el tracker activo.
+
+## ✅ CNV-007-H1 y API-012 — 2026-09-11
+
+- **CNV-007-H1 — `roles.ui_mode`.** Commit `c57b663`; migración `VARCHAR(10)`, default `full`,
+  validación `full/simple`, DTOs, respuestas efectivas, OpenAPI y pruebas IAM.
+- **API-012 — Docker out-of-the-box.** Commit `a68ae08`; workflow y `scripts/docker-e2e.sh` con
+  proyecto/red/volúmenes aislados, migración, seed idempotente, probes, Swagger, restart y
+  cleanup. E2E local ejecutado correctamente.
+
+## ✅ CNV-007-F6 — Integración — 2026-09-11
+
+El smoke real del editor consumió Hub/Domain sin regresiones; renovación de preview del Admin
+respondió `200` con expiración y firma nuevas.

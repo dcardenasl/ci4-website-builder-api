@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Auth;
 
+use App\DTO\Request\Support\TracksProvidedFields;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use OpenApi\Attributes as OA;
 
@@ -21,6 +22,8 @@ use OpenApi\Attributes as OA;
 )]
 readonly class UpdateMeRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     #[OA\Property(description: 'Updated first name', example: 'John', nullable: true)]
     public ?string $first_name;
 
@@ -41,6 +44,7 @@ readonly class UpdateMeRequestDTO extends BaseRequestDTO
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $this->first_name = isset($data['first_name']) ? trim((string) $data['first_name']) : null;
         $this->last_name  = isset($data['last_name']) ? trim((string) $data['last_name']) : null;
         $this->avatar_url = isset($data['avatar_url']) ? trim((string) $data['avatar_url']) : null;
@@ -48,10 +52,10 @@ readonly class UpdateMeRequestDTO extends BaseRequestDTO
 
     public function toArray(): array
     {
-        return array_filter([
+        return $this->filterProvidedFields([
             'first_name' => $this->first_name,
             'last_name'  => $this->last_name,
             'avatar_url' => $this->avatar_url,
-        ], static fn ($v) => $v !== null && $v !== '');
+        ], false);
     }
 }

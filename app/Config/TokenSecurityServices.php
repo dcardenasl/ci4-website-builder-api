@@ -20,7 +20,7 @@ trait TokenSecurityServices
             throw new \LogicException(
                 'Missing app.baseURL in .env. '
                 . 'This is used as the JWT token issuer claim. '
-                . 'Example: app.baseURL=http://localhost:8080'
+                . 'Example: app.baseURL=http://localhost:8180'
             );
         }
 
@@ -47,6 +47,8 @@ trait TokenSecurityServices
             static::userModel(),
             static::userAccountGuard(),
             static::effectivePermissionsResolver(),
+            static::auditService(),
+            static::tokenVersionService(),
             $refreshTokenTtl,
             $accessTokenTtl
         );
@@ -66,9 +68,18 @@ trait TokenSecurityServices
             static::auditService(),
             static::cache(),
             static::bearerTokenService(),
+            static::tokenVersionService(),
             $apiConfig->jwtAccessTokenTtl,
-            $apiConfig->jwtRevocationCacheTtl
         );
+    }
+
+    public static function tokenVersionService(bool $getShared = true): \App\Interfaces\Tokens\TokenVersionServiceInterface
+    {
+        if ($getShared) {
+            return static::getSharedInstance('tokenVersionService');
+        }
+
+        return new \App\Services\Tokens\TokenVersionService(new \App\Models\UserModel());
     }
 
     public static function bearerTokenService(bool $getShared = true): \App\Services\Tokens\BearerTokenService
@@ -159,7 +170,8 @@ trait TokenSecurityServices
         return new \App\Services\Auth\TokenIntrospectionService(
             static::jwtService(),
             static::tokenRevocationService(),
-            static::effectivePermissionsResolver()
+            static::effectivePermissionsResolver(),
+            static::userModel()
         );
     }
 

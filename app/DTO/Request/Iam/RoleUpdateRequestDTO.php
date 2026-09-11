@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\Iam;
 
+use App\DTO\Request\Support\TracksProvidedFields;
+use App\Enums\UiMode;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(schema: 'RoleUpdateRequest')]
 readonly class RoleUpdateRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     #[OA\Property(description: 'Application id; null for global roles', type: 'integer', nullable: true)]
     public ?int $application_id;
     #[OA\Property(description: 'Role code (unique within application)', type: 'string', nullable: true)]
@@ -20,6 +24,8 @@ readonly class RoleUpdateRequestDTO extends BaseRequestDTO
     public ?string $description;
     #[OA\Property(description: 'System role (cannot be deleted)', type: 'boolean', nullable: true)]
     public ?bool $is_system;
+    #[OA\Property(description: 'Panel presentation mode. This grants no permissions.', type: 'string', enum: ['full', 'simple'], nullable: true)]
+    public ?string $ui_mode;
 
     /** @var list<int>|null */
     #[OA\Property(
@@ -39,17 +45,20 @@ readonly class RoleUpdateRequestDTO extends BaseRequestDTO
             'name' => 'permit_empty|string|max_length[100]',
             'description' => 'permit_empty|string',
             'is_system' => 'permit_empty|in_list[0,1]',
+            'ui_mode' => 'permit_empty|in_list[full,simple]',
             'permission_ids' => 'permit_empty',
         ];
     }
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $this->application_id = isset($data['application_id']) ? (int) $data['application_id'] : null;
         $this->code = isset($data['code']) ? (string) $data['code'] : null;
         $this->name = isset($data['name']) ? (string) $data['name'] : null;
         $this->description = isset($data['description']) ? (string) $data['description'] : null;
         $this->is_system = isset($data['is_system']) ? (bool) $data['is_system'] : null;
+        $this->ui_mode = array_key_exists('ui_mode', $data) ? UiMode::fromMixed($data['ui_mode'])->value : null;
         $this->permission_ids = array_key_exists('permission_ids', $data)
             ? self::normalizePermissionIds($data['permission_ids'])
             : null;
@@ -62,12 +71,13 @@ readonly class RoleUpdateRequestDTO extends BaseRequestDTO
         // global). The DTO field remains for API/back-compat, but never persists.
         // permission_ids is excluded — handled by RoleService::update via
         // RolePermissionAssignmentService, not by the roles repository.
-        return array_filter([
+        return $this->filterProvidedFields([
             'code' => $this->code,
             'name' => $this->name,
             'description' => $this->description,
             'is_system' => $this->is_system,
-        ], fn ($v) => $v !== null);
+            'ui_mode' => $this->ui_mode,
+        ]);
     }
 
     /**

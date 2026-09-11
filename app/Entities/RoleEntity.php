@@ -13,6 +13,7 @@ class RoleEntity extends Entity
         'id'             => 'integer',
         'application_id' => '?integer',
         'is_system'      => 'boolean',
+        'ui_mode'        => 'string',
     ];
 
     /** @var list<string> */

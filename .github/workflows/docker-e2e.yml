@@ -1,0 +1,26 @@
+name: Docker E2E
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  docker-e2e:
+    name: Docker bootstrap and restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run isolated Docker E2E
+        env:
+          DOCKER_PROJECT_NAME: ci4-api-e2e-${{ github.run_id }}
+          API_E2E_HOST_PORT: 18080
+        run: ./scripts/docker-e2e.sh

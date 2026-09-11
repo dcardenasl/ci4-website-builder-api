@@ -114,10 +114,10 @@ for i in $(seq 1 30); do
 done
 
 echo "[entrypoint] Running migrations..."
-php spark migrate --all || true
+php spark migrate --all
 
 echo "[entrypoint] Seeding RBAC bootstrap (idempotent)..."
-php spark db:seed RbacBootstrapSeeder || true
+php spark db:seed RbacBootstrapSeeder
 
 # --- 5. Hand off ---------------------------------------------------------
 exec "$@"

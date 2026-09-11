@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO\Request\ApiKeys;
 
+use App\DTO\Request\Support\TracksProvidedFields;
 use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
 
 /**
@@ -13,6 +14,8 @@ use dcardenasl\Ci4ApiCore\Dto\BaseRequestDTO;
  */
 readonly class ApiKeyCreateRequestDTO extends BaseRequestDTO
 {
+    use TracksProvidedFields;
+
     public string $name;
     public ?int $rate_limit_requests;
     public ?int $rate_limit_window;
@@ -32,6 +35,7 @@ readonly class ApiKeyCreateRequestDTO extends BaseRequestDTO
 
     protected function map(array $data): void
     {
+        $this->trackProvidedFields($data);
         $this->name = trim((string) $data['name']);
         $this->rate_limit_requests = isset($data['rate_limit_requests']) ? (int) $data['rate_limit_requests'] : null;
         $this->rate_limit_window = isset($data['rate_limit_window']) ? (int) $data['rate_limit_window'] : null;
@@ -41,12 +45,12 @@ readonly class ApiKeyCreateRequestDTO extends BaseRequestDTO
 
     public function toArray(): array
     {
-        return array_filter([
+        return $this->filterProvidedFields([
             'name'              => $this->name,
             'rate_limit_requests' => $this->rate_limit_requests,
             'rate_limit_window'   => $this->rate_limit_window,
             'user_rate_limit'     => $this->user_rate_limit,
             'ip_rate_limit'       => $this->ip_rate_limit,
-        ], fn ($v) => $v !== null);
+        ]);
     }
 }

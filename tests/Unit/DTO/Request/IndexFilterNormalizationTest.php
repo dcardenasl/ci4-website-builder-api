@@ -58,6 +58,15 @@ final class IndexFilterNormalizationTest extends CIUnitTestCase
         $this->assertArrayNotHasKey('role', $data['filter'] ?? []);
     }
 
+    public function testUserIndexDefaultsToFullProjectionAndAcceptsListProjection(): void
+    {
+        $full = new UserIndexRequestDTO([], service('validation'));
+        $list = new UserIndexRequestDTO(['projection' => 'list'], service('validation'));
+
+        $this->assertSame('full', $full->toArray()['projection']);
+        $this->assertSame('list', $list->toArray()['projection']);
+    }
+
     public function testApiKeyIndexReadsIsActiveAndNameFromFilterArray(): void
     {
         $dto = new ApiKeyIndexRequestDTO([

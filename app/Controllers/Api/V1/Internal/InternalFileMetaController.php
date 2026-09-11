@@ -6,6 +6,8 @@ namespace App\Controllers\Api\V1\Internal;
 
 use App\Models\FileModel;
 use CodeIgniter\HTTP\ResponseInterface;
+use Config\Services;
+use dcardenasl\Ci4ApiCore\Exceptions\BadRequestException;
 use dcardenasl\Ci4ApiCore\Http\ApiController;
 
 /**
@@ -45,12 +47,16 @@ class InternalFileMetaController extends ApiController
                 return (object) [];
             }
 
-            $ids = array_slice($ids, 0, 200);
+            if (count($ids) > 200) {
+                throw new BadRequestException(lang('Files.max_batch_ids'), [
+                    'ids' => [lang('Files.max_batch_ids_hint')],
+                ]);
+            }
 
             /** @var FileModel $model */
             $model = model(FileModel::class);
             $rows  = $model
-                ->select('id, url, variants')
+                ->select('id, path, url, variants')
                 ->whereIn('id', $ids)
                 ->where('deleted_at IS NULL')
                 ->asArray()
@@ -74,8 +80,19 @@ class InternalFileMetaController extends ApiController
                     $variants = is_array($decoded) ? $decoded : null;
                 }
 
+                $path = is_scalar($row['path'] ?? null) ? trim((string) $row['path']) : '';
                 $urlRaw = $row['url'] ?? null;
-                $url    = is_scalar($urlRaw) ? (string) $urlRaw : null;
+                $url = $path !== ''
+                    ? Services::storageManager()->url($path)
+                    : (is_scalar($urlRaw) ? (string) $urlRaw : null);
+
+                if (is_array($variants)) {
+                    foreach ($variants as $key => $variant) {
+                        if (is_array($variant) && isset($variant['path'])) {
+                            $variants[$key]['url'] = Services::storageManager()->url((string) $variant['path']);
+                        }
+                    }
+                }
 
                 $result[$fileId] = [
                     'id'       => $fileId,

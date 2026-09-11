@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-09-11
+
+### Added
+- **Role presentation mode** — added the `roles.ui_mode` contract (`full`/`simple`) to role
+  persistence, authenticated-user responses, DTO validation and generated OpenAPI documentation;
+  the mode is presentation-only and never grants permissions.
+- **Permission-aware admin dashboard summary** — bounded users, files and request-stat sections are returned only when the authenticated actor has the matching read permission.
+- **Bounded admin user list projection** — an explicit `projection=list` path paginates users and preloads roles in one bounded query while preserving the full response as the default.
+- **Locale-aware Google pending-approval email** — the Google login endpoint accepts an optional locale and queues the subject/template in the caller's supported language.
+- **Public-site cache permissions** — seeded `system.public-cache.read` and
+  `system.public-cache.invalidate` for the admin cache status and invalidation consumers.
+- **Cached file picker manifest** — lightweight metadata/preview endpoint with mutation-aware version invalidation.
+- **`files:audit`** — read-only CLI audit that compares local upload files with original and
+  variant paths persisted in the `files` table, reporting disk/database discrepancies without
+  modifying either side.
+- **`RequestLogModel::getDashboardStats()`** — lightweight availability summary (total/successful/failed requests, error rate, availability) for the admin dashboard widget, without paying the cost of percentile/slow-request analysis it doesn't display.
+- **Centralized file authorization policy** — file actions now use a closed action enum, require `files.read`/`files.write` or `files.admin` as appropriate, and no longer accept caller-controlled ownership bypass flags.
+- **`NullVirusScannerService`** — explicit placeholder scanner that fails closed when virus scanning is enabled without a real integration.
+- **Refresh-token family lifecycle** — family/parent lineage, reuse detection, per-user access-token versions, and immediate invalidation after account-wide revocation.
+- **User role composition** — custom profiles now retain the starter's baseline `user` role and its generic self/file permissions.
+- **Request DTO nullable-field preservation** — request payloads now distinguish an omitted
+  nullable field from an explicit `null`, so callers can intentionally clear optional API key,
+  profile, file metadata, gallery, IAM, and user fields.
+
+### Changed
+- Reconciled the CNV-007 tracker with the browser smoke evidence; preview token renewal remains an
+  Admin/Web integration gate and does not add resource authorization before F9.
+- **File policy configuration** — removed the obsolete `FILES_USER_SCOPED` example; `FILE_USER_SCOPED_FILES` is the single supported setting.
+- **Runtime logging configuration** — map `LOG_LEVEL` to CodeIgniter thresholds and skip request-logging filter dispatch when request logging is explicitly disabled.
+- **Runtime performance configuration** — added opt-in APCu caching with a file fallback and enabled persistent database connections only in production.
+- **Public static assets** — serve uploaded image/font variants with one-year immutable cache headers at the Apache and `.htaccess` layers.
+- **IAM persistence access** — migrated the nine IAM services from raw query-builder access to typed model finder/mutator methods and added a zero-tolerance architecture guard.
+- **Starter runtime defaults** — documented the generic Hub security contracts and aligned local
+  `.env`/init/OpenAPI/CORS defaults with the `8180` kit port series.
+- **`RequestLogModel::getStats()`** — consolidated from ~8 separate round-trips into one aggregation query plus one percentile query using window functions.
+
+### Fixed
+- **Cross-domain file usage guard** — file deletion, purge, usage reads, and replacement now
+  include references reported by the configured CMS domain; successful mutations notify that
+  domain to invalidate stale file metadata.
+- **File public URLs** — resolve response and internal metadata URLs from the current storage
+  path instead of persisting deployment hosts; existing file rows are normalized by migration
+  and download responses also use the active storage driver.
+- **`LocalDriver`** — use an explicit `PortableVisibilityConverter` instead of relying on Flysystem's implicit default, so stored file permissions are predictable.
+- **`UpdateFileMetadataRequestDTO`** — accept an explicit `null` metadata field as a valid clear
+  operation instead of treating it as an empty update.
+- **File upload policy** — simulated ClamAV scans can no longer report unscanned files as safe.
+- **Refresh-token revocation cache** — negative cache entries are no longer stored, so a newly revoked access token cannot be hidden by a stale negative result.
+
+### Changed
+- **`dcardenasl/ci4-api-core`** — bumped constraint from `^1.0` to `^1.5`; adjusted `ApiKeyRepositoryInterface::findAll()`'s test double for the package's updated signature (`?int $limit = null`).
+
+### Security
+- **`codeigniter4/framework`** — bumped to v4.7.4, closing CVE-2026-63221 (critical, SQLi in `deleteBatch()`), CVE-2026-63222 (high, path traversal in `UploadedFile::move()`), and CVE-2026-63220 (medium, header spoofing in `isSecure()`).
+- **`guzzlehttp/guzzle`** — bumped to 7.15.5 (transitive via `aws/aws-sdk-php`, `google/apiclient`, `google/auth`), closing CVE-2026-69246/69245. None of the affected code paths are exercised by this app; verified via `composer audit`.
+
 ## [1.0.0] — 2026-07-23
 
 ### Added

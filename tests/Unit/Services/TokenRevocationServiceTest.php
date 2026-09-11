@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Services;
 
 use App\DTO\Request\Identity\RevokeAccessTokenRequestDTO;
+use App\Enums\RefreshTokenRevocationReason;
 use App\Interfaces\Tokens\JwtServiceInterface;
+use App\Interfaces\Tokens\TokenVersionServiceInterface;
 use App\Models\RefreshTokenModel;
 use App\Models\TokenBlacklistModel;
 use App\Services\Tokens\TokenRevocationService;
@@ -30,6 +32,7 @@ class TokenRevocationServiceTest extends CIUnitTestCase
     protected JwtServiceInterface $mockJwtService;
     protected AuditServiceInterface $mockAuditService;
     protected CacheInterface $mockCache;
+    protected TokenVersionServiceInterface $mockTokenVersionService;
 
     protected function setUp(): void
     {
@@ -40,6 +43,7 @@ class TokenRevocationServiceTest extends CIUnitTestCase
         $this->mockJwtService = $this->createMock(JwtServiceInterface::class);
         $this->mockAuditService = $this->createMock(AuditServiceInterface::class);
         $this->mockCache = $this->createMock(CacheInterface::class);
+        $this->mockTokenVersionService = $this->createMock(TokenVersionServiceInterface::class);
 
         $this->service = new TokenRevocationService(
             $this->mockBlacklistModel,
@@ -48,8 +52,8 @@ class TokenRevocationServiceTest extends CIUnitTestCase
             $this->mockAuditService,
             $this->mockCache,
             new \App\Services\Tokens\BearerTokenService(),
-            3600,
-            60
+            $this->mockTokenVersionService,
+            3600
         );
     }
 
@@ -220,10 +224,7 @@ class TokenRevocationServiceTest extends CIUnitTestCase
             ->with($jti)
             ->willReturn(false);
 
-        $this->mockCache
-            ->expects($this->once())
-            ->method('save')
-            ->willReturn(true);
+        $this->mockCache->expects($this->never())->method('save');
 
         $result = $this->service->isRevoked($jti);
 
@@ -257,7 +258,12 @@ class TokenRevocationServiceTest extends CIUnitTestCase
         $this->mockRefreshTokenModel
             ->expects($this->once())
             ->method('revokeAllUserTokens')
-            ->with($userId);
+            ->with($userId, RefreshTokenRevocationReason::RevokeAll);
+        $this->mockTokenVersionService
+            ->expects($this->once())
+            ->method('increment')
+            ->with($userId)
+            ->willReturn(1);
 
         $result = $this->service->revokeAllUserTokens($userId);
 

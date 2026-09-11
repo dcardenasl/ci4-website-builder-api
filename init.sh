@@ -232,7 +232,7 @@ if [ "$SKIP_SERVER" = false ]; then
   case "$START_SERVER" in
     [Yy])
       print_header "Starting development server"
-      printf "Server at http://localhost:8080 — press Ctrl+C to stop.\n\n"
+      printf "Server at http://localhost:8180 — press Ctrl+C to stop.\n\n"
       php spark serve
       ;;
     *)

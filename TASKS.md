@@ -1,9 +1,7 @@
 # TASKS — ci4-website-builder-api
 
-> Fuente de verdad para trabajo abierto en este repositorio.
-> Los entregables cerrados están en [`TASKS_ARCHIVE.md`](TASKS_ARCHIVE.md).
-> Seguimiento cross-repo: [`../TASKS.md`](../TASKS.md).
-> Tracker depurado el 2026-07-21; no se conservan notas de conversación ni bitácoras de participantes.
+> Trabajo abierto de este repositorio. Lo cerrado está en [`TASKS_ARCHIVE.md`](TASKS_ARCHIVE.md).
+> Plan cross-repo: [`../docs/plans/2026-09-11-plan-nivelacion-stack-modular-suite.md`](../docs/plans/2026-09-11-plan-nivelacion-stack-modular-suite.md).
 
 ## 🔴 En progreso
 
@@ -11,35 +9,36 @@
 
 ## 🟡 Próximo
 
-*(vacío)*
+*(vacío; la autorización por recurso es Domain-owned y no se duplica en API/Hub)*
 
-## ⚪ Backlog
+## ✅ Cerrado con evidencia
 
-- [ ] **API-012 — Docker out-of-the-box:** validar la orquestación cross-repo en `ci4-kickstart`
-  después de la idempotencia de `docker/entrypoint.sh`.
+- **CNV-007-H1 — `roles.ui_mode`.** Commit `c57b663`; migración portable, DTOs, validación,
+  respuestas efectivas por roles, OpenAPI y regresiones IAM.
+- **API-012 — Docker out-of-the-box.** Commit `a68ae08`; runner aislado y workflow CI cubren build,
+  migración, bootstrap idempotente, `/ping`, `/ready`, Swagger, reinicio y cleanup. E2E local
+  ejecutado con el daemon Docker.
+- **CNV-007-F6 — Integración.** El smoke del editor consumió el Hub/Domain existentes sin romper
+  sesión ni contratos API; renovación Admin `POST /admin/cms/editor/pages/1/preview/renew` respondió
+  `200` con firma y expiración nuevas.
+- **CNV-007-F9 — Reconciliación de alcance.** API/Hub conserva identidad, roles y permisos
+  globales; Domain resuelve el alcance concreto de pages, entries y collections. No se duplica ACL
+  ni se introduce multi-tenancy física. Evidencia Domain: `729aa89`.
 
 ## ⚠️ Señales de activación
 
-- **API-014 — Multi-tenant nativo:** fuera de alcance mientras no exista una señal real que exija
-  aislamiento físico o un SLA propio.
-- **SEÑAL-API-001 — `InvalidChars` con enteros en JSON:** mantener el workaround documentado hasta
-  que exista un segundo endpoint afectado o una corrección upstream de CI4.
-- **FILES-001 — Endpoints de archivos faltantes:** crear tareas individuales cuando se prioricen
-  `PATCH /files/{id}`, replace, regeneración de variantes o consulta de usages.
+- **API-014:** multi-tenant nativo solo con una señal real de aislamiento o SLA propio.
+- **SEÑAL-API-001:** mantener workaround documentado para `InvalidChars` hasta un segundo endpoint
+  afectado o corrección upstream.
+- **FILES-001:** desglosar endpoints de archivos únicamente cuando se prioricen.
 
-## 🏗️ Contratos de arquitectura
+## 🏗️ Contratos
 
-- **DTO-First:** toda entrada y salida de Controller usa DTOs; no arrays raw sin contrato.
-- **Services puros:** no conocen HTTP ni `$request`.
-- **Controllers delgados:** usar `handleRequest()` de `ApiController`.
-- **Permisos:** usar separador `.`; nunca `:`.
-- **Rutas:** organizar endpoints en `app/Config/Routes/v1/<dominio>.php`.
-- **Tests:** todo endpoint nuevo necesita al menos un Feature test.
-- **CRUD nuevo:** preferir `php spark make:crud {Resource} --domain {Domain} --route {slug}`.
-- **OpenAPI:** regenerar Swagger al cerrar cambios de endpoints.
-- **Migraciones:** nunca modificar migraciones existentes; crear una nueva para cada cambio de schema.
+- DTO-first, Services sin HTTP, Controllers delgados y permisos con `.`.
+- Swagger se regenera con cada cambio de endpoint; cada schema cambia mediante migración nueva.
+- Todo endpoint nuevo necesita Feature test y calidad completa.
 
 ## 🔧 Referencias
 
+- Plan: [`../docs/plans/2026-09-11-plan-nivelacion-stack-modular-suite.md`](../docs/plans/2026-09-11-plan-nivelacion-stack-modular-suite.md)
 - Histórico: [`TASKS_ARCHIVE.md`](TASKS_ARCHIVE.md)
-- Tracker global: [`../TASKS.md`](../TASKS.md)

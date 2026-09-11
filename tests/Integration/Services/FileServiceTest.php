@@ -29,11 +29,14 @@ class FileServiceTest extends CIUnitTestCase
     protected FileService $service;
     protected FileRepositoryInterface $mockFileRepository;
     protected \App\Interfaces\Files\FileReferenceRepositoryInterface $mockFileReferenceRepository;
+    protected \App\Interfaces\Files\DomainFileUsageClientInterface $mockDomainFileUsageClient;
     protected StorageManager $mockStorage;
     protected \App\Libraries\Files\StorageKeyGenerator $mockStorageKeyGenerator;
     protected AuditServiceInterface $mockAuditService;
     protected \App\Interfaces\Files\FilePolicyServiceInterface $mockFilePolicy;
     protected \App\Interfaces\Files\VirusScannerServiceInterface $mockVirusScanner;
+    /** @var list<array{source: string, resource: string, resource_id: int, label: string|null, role: string}> */
+    protected array $domainUsages = [];
     protected bool $virusScannerResult = true;
     /** @var array{variants: array<string, array<string, mixed>>, dimensions: array{width: int|null, height: int|null}} */
     protected array $variantResult = ['variants' => [], 'dimensions' => ['width' => null, 'height' => null]];
@@ -57,16 +60,20 @@ class FileServiceTest extends CIUnitTestCase
         $this->mockAuditService = $this->createMock(AuditServiceInterface::class);
         $this->mockFilePolicy = $this->createMock(\App\Interfaces\Files\FilePolicyServiceInterface::class);
         $this->mockFilePolicy->method('resolveUploadVisibility')->willReturn('private');
+        $this->mockFilePolicy->method('canRead')->willReturn(true);
+        $this->mockFilePolicy->method('canUpload')->willReturn(true);
         $this->mockFilePolicy->method('shouldScopeListingsToOwner')->willReturn(true);
         $this->mockFilePolicy->method('canBypassOwnershipForRead')->willReturn(false);
         $this->mockFilePolicy->method('canAccessFile')->willReturnCallback(
             static fn (\App\Entities\FileEntity $file, int $userId): bool => (int) $file->user_id === $userId
         );
 
+        $this->mockStorage
+            ->method('relativeUrl')
+            ->willReturnCallback(static fn (string $path): string => '/uploads/' . ltrim($path, '/'));
+
         // Inject real processors and a deterministic storage key generator.
-        $responseMapper = new \dcardenasl\Ci4ApiCore\Mappers\DtoResponseMapper(
-            \App\DTO\Response\Files\FileResponseDTO::class
-        );
+        $responseMapper = new \App\Mappers\Files\FileResponseMapper($this->mockStorage);
 
         $mockVariantProcessor = $this->createMock(\App\Libraries\Files\ImageVariantProcessor::class);
         $mockVariantProcessor->method('generate')
@@ -74,6 +81,8 @@ class FileServiceTest extends CIUnitTestCase
         $this->mockVirusScanner = $this->createMock(\App\Interfaces\Files\VirusScannerServiceInterface::class);
         $this->mockVirusScanner->method('isSafe')->willReturnCallback(fn (): bool => $this->virusScannerResult);
         $this->mockFileReferenceRepository = $this->createMock(\App\Interfaces\Files\FileReferenceRepositoryInterface::class);
+        $this->mockDomainFileUsageClient = $this->createMock(\App\Interfaces\Files\DomainFileUsageClientInterface::class);
+        $this->mockDomainFileUsageClient->method('collectUsages')->willReturnCallback(fn (): array => $this->domainUsages);
 
         $binaryIngestion = new \App\Services\Files\FileBinaryIngestor(
             $this->mockFileRepository,
@@ -95,6 +104,8 @@ class FileServiceTest extends CIUnitTestCase
             $this->mockFileReferenceRepository,
             $this->mockFilePolicy,
             $binaryIngestion,
+            $this->mockDomainFileUsageClient,
+            new \App\Libraries\Files\FilePickerManifestCache(cache()),
         );
     }
 
@@ -444,13 +455,17 @@ class FileServiceTest extends CIUnitTestCase
             ->method('find')
             ->willReturn($file);
 
+        $this->mockStorage
+            ->method('url')
+            ->willReturn('https://storage.example/uploads/2024/01/01/myfile.pdf');
+
         $request = new \App\DTO\Request\Files\FileGetRequestDTO(['id' => 1, 'user_id' => 1], service('validation'));
         $result = $this->service->download($request);
         $payload = $result->toArray();
 
         $this->assertInstanceOf(\App\DTO\Response\Files\FileDownloadResponseDTO::class, $result);
         $this->assertEquals('myfile.pdf', $payload['original_name']);
-        $this->assertEquals('http://example.com/myfile.pdf', $payload['url']);
+        $this->assertEquals('https://storage.example/uploads/2024/01/01/myfile.pdf', $payload['url']);
     }
 
     // ==================== DESTROY TESTS ====================
@@ -513,6 +528,10 @@ class FileServiceTest extends CIUnitTestCase
             ->method('delete')
             ->with(1)
             ->willReturn(true);
+        $this->mockDomainFileUsageClient
+            ->expects($this->once())
+            ->method('broadcastInvalidate')
+            ->with(1);
 
         $result = $this->service->destroy(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
 
@@ -542,6 +561,48 @@ class FileServiceTest extends CIUnitTestCase
         $this->expectException(\dcardenasl\Ci4ApiCore\Exceptions\ConflictException::class);
 
         $this->service->destroy(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+    }
+
+    public function testDestroyFileUsedByDomainThrowsConflictException(): void
+    {
+        $file = $this->createFileEntity([
+            'id' => 1,
+            'user_id' => 1,
+            'path' => '2024/01/01/file.jpg',
+        ]);
+
+        $this->mockFileRepository->method('find')->willReturn($file);
+        $this->mockFileReferenceRepository->method('getByFileId')->willReturn([]);
+        $this->domainUsages = [
+            ['source' => 'domain', 'resource' => 'pages', 'resource_id' => 10, 'label' => 'Home', 'role' => 'hero'],
+        ];
+
+        $this->mockFileRepository->expects($this->never())->method('delete');
+        $this->expectException(\dcardenasl\Ci4ApiCore\Exceptions\ConflictException::class);
+
+        $this->service->destroy(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
+    }
+
+    public function testForceDestroyFileUsedByDomainThrowsConflictException(): void
+    {
+        $file = $this->createFileEntity([
+            'id' => 1,
+            'user_id' => 1,
+            'path' => '2024/01/01/file.jpg',
+            'deleted_at' => '2026-05-17 12:00:00',
+        ]);
+
+        $this->mockFileRepository->method('findIncludingTrashed')->willReturn($file);
+        $this->mockFileReferenceRepository->method('getByFileId')->willReturn([]);
+        $this->domainUsages = [
+            ['source' => 'domain', 'resource' => 'pages', 'resource_id' => 10, 'label' => 'Home', 'role' => 'hero'],
+        ];
+
+        $this->mockStorage->expects($this->never())->method('delete');
+        $this->mockFileRepository->expects($this->never())->method('purge');
+        $this->expectException(\dcardenasl\Ci4ApiCore\Exceptions\ConflictException::class);
+
+        $this->service->forceDestroy(1, new \dcardenasl\Ci4ApiCore\Dto\SecurityContext(1));
     }
 
     public function testForceDestroyPurgesTrashedFile(): void
