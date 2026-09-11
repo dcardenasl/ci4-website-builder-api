@@ -188,6 +188,21 @@ jobs:
         php-version: ['8.2', '8.3']
         ci4-version: ['4.7.*']
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: ci4_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -222,6 +237,27 @@ jobs:
           echo "JWT_SECRET_KEY = \"${JWT_KEY}\"" >> .env
           ENC_KEY="hex2bin:$(openssl rand -hex 32)"
           echo "encryption.key = \"${ENC_KEY}\"" >> .env
+          sed -i 's/^database.tests.hostname =.*/database.tests.hostname = 127.0.0.1/' .env
+          sed -i 's/^database.tests.database =.*/database.tests.database = ci4_test/' .env
+          sed -i 's/^database.tests.username =.*/database.tests.username = root/' .env
+          sed -i 's/^database.tests.password =.*/database.tests.password = root/' .env
+          sed -i 's/^database.tests.DBDriver =.*/database.tests.DBDriver = MySQLi/' .env
+          sed -i 's/^database.tests.DBPrefix =.*/database.tests.DBPrefix = ""/' .env
+          sed -i 's/^database.tests.port =.*/database.tests.port = 3306/' .env
 
-      - name: Run Unit tests (no DB required)
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -u root -proot --silent; then
+              echo "✓ MySQL is ready"
+              break
+            fi
+            echo "Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+
+      - name: Prepare test database
+        run: php spark tests:prepare-db
+
+      - name: Run Unit tests
         run: vendor/bin/phpunit --testsuite=Unit --no-coverage
