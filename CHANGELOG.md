@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   profile, file metadata, gallery, IAM, and user fields.
 
 ### Changed
+- Reconciled the CNV-007 tracker with the browser smoke evidence; preview token renewal remains an
+  Admin/Web integration gate and does not add resource authorization before F9.
 - **File policy configuration** — removed the obsolete `FILES_USER_SCOPED` example; `FILE_USER_SCOPED_FILES` is the single supported setting.
 - **Runtime logging configuration** — map `LOG_LEVEL` to CodeIgniter thresholds and skip request-logging filter dispatch when request logging is explicitly disabled.
 - **Runtime performance configuration** — added opt-in APCu caching with a file fallback and enabled persistent database connections only in production.

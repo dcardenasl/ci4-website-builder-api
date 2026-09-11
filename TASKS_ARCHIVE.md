@@ -121,3 +121,8 @@ La orquestación Docker cross-repo permaneció abierta hasta el runner aislado y
 - **API-012 — Docker out-of-the-box.** Commit `a68ae08`; workflow y `scripts/docker-e2e.sh` con
   proyecto/red/volúmenes aislados, migración, seed idempotente, probes, Swagger, restart y
   cleanup. E2E local ejecutado correctamente.
+
+## ✅ CNV-007-F6 — Integración — 2026-09-11
+
+El smoke real del editor consumió Hub/Domain sin regresiones; renovación de preview del Admin
+respondió `200` con expiración y firma nuevas.

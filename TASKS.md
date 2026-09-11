@@ -9,8 +9,6 @@
 
 ## 🟡 Próximo
 
-- [ ] **CNV-007-F6 — Integración.** Acompañar el smoke Panel ↔ Web y validar que H1 no rompe filtros,
-      sesiones ni contratos existentes.
 - [ ] **CNV-007-F9 — Autorización por recurso.** Solo en la fase final cross-repo.
 
 ## ✅ Cerrado con evidencia
@@ -20,6 +18,9 @@
 - **API-012 — Docker out-of-the-box.** Commit `a68ae08`; runner aislado y workflow CI cubren build,
   migración, bootstrap idempotente, `/ping`, `/ready`, Swagger, reinicio y cleanup. E2E local
   ejecutado con el daemon Docker.
+- **CNV-007-F6 — Integración.** El smoke del editor consumió el Hub/Domain existentes sin romper
+  sesión ni contratos API; renovación Admin `POST /admin/cms/editor/pages/1/preview/renew` respondió
+  `200` con firma y expiración nuevas.
 
 ## ⚠️ Señales de activación
 
