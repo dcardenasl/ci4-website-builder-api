@@ -9,14 +9,17 @@
 
 ## 🟡 Próximo
 
-- [ ] **CNV-007-H1 — `roles.ui_mode`.** Migración nueva `VARCHAR(10)` con default `full`,
-      `allowedFields`, DTOs, validación, endpoint, OpenAPI y regresiones. No usar ENUM para conservar
-      portabilidad.
-- [ ] **API-012 — Docker out-of-the-box.** Ejecutar E2E real en CI/daemon Docker: migraciones,
-      seed/bootstrap, `/ping`, Swagger, reinicio idempotente y limpieza.
 - [ ] **CNV-007-F6 — Integración.** Acompañar el smoke Panel ↔ Web y validar que H1 no rompe filtros,
       sesiones ni contratos existentes.
 - [ ] **CNV-007-F9 — Autorización por recurso.** Solo en la fase final cross-repo.
+
+## ✅ Cerrado con evidencia
+
+- **CNV-007-H1 — `roles.ui_mode`.** Commit `c57b663`; migración portable, DTOs, validación,
+  respuestas efectivas por roles, OpenAPI y regresiones IAM.
+- **API-012 — Docker out-of-the-box.** Commit `a68ae08`; runner aislado y workflow CI cubren build,
+  migración, bootstrap idempotente, `/ping`, `/ready`, Swagger, reinicio y cleanup. E2E local
+  ejecutado con el daemon Docker.
 
 ## ⚠️ Señales de activación
 
