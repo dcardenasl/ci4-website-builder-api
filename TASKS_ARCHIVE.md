@@ -3,6 +3,12 @@
 > Historial de tareas completadas. Movido desde TASKS.md para mantener el tracker activo liviano.
 > Última actualización: 2026-08-25
 
+## ✅ CNV-007-F9 — Reconciliación de alcance — 2026-09-11
+
+La autorización por recurso queda centralizada en Domain (`729aa89`). API/Hub sigue siendo dueño
+de identidad, roles y permisos globales, pero no replica la ACL de contenido ni agrega un modelo
+de tenant sin un requisito de producto. No hay implementación local pendiente.
+
 ---
 
 ## ✅ Backport de mejoras de Teatro Museo — Fase 0 y CVE (2026-08-25)

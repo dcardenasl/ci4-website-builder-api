@@ -9,7 +9,7 @@
 
 ## 🟡 Próximo
 
-- [ ] **CNV-007-F9 — Autorización por recurso.** Solo en la fase final cross-repo.
+*(vacío; la autorización por recurso es Domain-owned y no se duplica en API/Hub)*
 
 ## ✅ Cerrado con evidencia
 
@@ -21,6 +21,9 @@
 - **CNV-007-F6 — Integración.** El smoke del editor consumió el Hub/Domain existentes sin romper
   sesión ni contratos API; renovación Admin `POST /admin/cms/editor/pages/1/preview/renew` respondió
   `200` con firma y expiración nuevas.
+- **CNV-007-F9 — Reconciliación de alcance.** API/Hub conserva identidad, roles y permisos
+  globales; Domain resuelve el alcance concreto de pages, entries y collections. No se duplica ACL
+  ni se introduce multi-tenancy física. Evidencia Domain: `729aa89`.
 
 ## ⚠️ Señales de activación
 
