@@ -20,7 +20,7 @@ class RoleModel extends BaseAuditableModel
     protected $useSoftDeletes = false;
     protected $useTimestamps = true;
 
-    protected $allowedFields = ['application_id', 'code', 'name', 'description', 'is_system'];
+    protected $allowedFields = ['application_id', 'code', 'name', 'description', 'is_system', 'ui_mode'];
 
     /** @var array<int, string> */
     protected array $searchableFields = ['code', 'name'];
@@ -37,6 +37,7 @@ class RoleModel extends BaseAuditableModel
         'name' => 'required|string|max_length[100]',
         'description' => 'permit_empty|string',
         'is_system' => 'permit_empty|in_list[0,1]',
+        'ui_mode' => 'permit_empty|in_list[full,simple]',
     ];
 
     public function findIdByCode(string $code): ?int

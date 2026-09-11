@@ -44,6 +44,51 @@ final class RoleSyncPermissionsTest extends ApiTestCase
         );
     }
 
+    public function testRoleUiModeDefaultsToFullAndCanBeSetToSimple(): void
+    {
+        $this->actAs('superadmin');
+
+        $defaultCode = 'qa-ui-default-' . uniqid();
+        $default = $this->withBodyFormat('json')->post('/api/v1/iam/roles', [
+            'code' => $defaultCode,
+            'name' => 'Default UI mode',
+        ]);
+        $default->assertStatus(201);
+        $defaultBody = json_decode($default->getJSON(), true) ?? [];
+        $this->assertSame('full', $defaultBody['data']['ui_mode'] ?? null);
+
+        $simpleCode = 'qa-ui-simple-' . uniqid();
+        $simple = $this->withBodyFormat('json')->post('/api/v1/iam/roles', [
+            'code' => $simpleCode,
+            'name' => 'Simple UI mode',
+            'ui_mode' => 'simple',
+        ]);
+        $simple->assertStatus(201);
+        $simpleBody = json_decode($simple->getJSON(), true) ?? [];
+        $this->assertSame('simple', $simpleBody['data']['ui_mode'] ?? null);
+
+        $roleId = (int) ($simpleBody['data']['id'] ?? 0);
+        $updated = $this->withBodyFormat('json')->put("/api/v1/iam/roles/{$roleId}", [
+            'ui_mode' => 'full',
+        ]);
+        $updated->assertStatus(200);
+        $updatedBody = json_decode($updated->getJSON(), true) ?? [];
+        $this->assertSame('full', $updatedBody['data']['ui_mode'] ?? null);
+    }
+
+    public function testRoleUiModeRejectsUnknownValues(): void
+    {
+        $this->actAs('superadmin');
+
+        $result = $this->withBodyFormat('json')->post('/api/v1/iam/roles', [
+            'code' => 'qa-ui-invalid-' . uniqid(),
+            'name' => 'Invalid UI mode',
+            'ui_mode' => 'godmode',
+        ]);
+
+        $result->assertStatus(422);
+    }
+
     public function testUpdateRoleReplacesPermissionSetAtomically(): void
     {
         $this->actAs('superadmin');

@@ -4105,6 +4105,14 @@
                         "description": "System role (cannot be deleted)",
                         "type": "boolean"
                     },
+                    "ui_mode": {
+                        "description": "Panel presentation mode. This grants no permissions.",
+                        "type": "string",
+                        "enum": [
+                            "full",
+                            "simple"
+                        ]
+                    },
                     "permission_ids": {
                         "description": "Optional list of permission ids to attach to the new role. Omit to create a role with no permissions.",
                         "type": "array",
@@ -4147,6 +4155,15 @@
                         "description": "System role (cannot be deleted)",
                         "type": "boolean",
                         "nullable": true
+                    },
+                    "ui_mode": {
+                        "description": "Panel presentation mode. This grants no permissions.",
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "full",
+                            "simple"
+                        ]
                     },
                     "permission_ids": {
                         "description": "Replace the role permission set with this list of permission ids. Omit to leave permissions unchanged. Empty list removes all permissions.",
@@ -4653,10 +4670,25 @@
                                 },
                                 "name": {
                                     "type": "string"
+                                },
+                                "ui_mode": {
+                                    "type": "string",
+                                    "enum": [
+                                        "full",
+                                        "simple"
+                                    ]
                                 }
                             },
                             "type": "object"
                         }
+                    },
+                    "ui_mode": {
+                        "description": "Effective presentation mode. Full wins over simple and it never grants permissions.",
+                        "type": "string",
+                        "enum": [
+                            "full",
+                            "simple"
+                        ]
                     },
                     "permissions": {
                         "description": "Effective permission codes for the current application. Drives UI gating on the frontend.",
@@ -5084,6 +5116,14 @@
                         "description": "System role flag",
                         "type": "boolean"
                     },
+                    "ui_mode": {
+                        "description": "Panel presentation mode. This grants no permissions.",
+                        "type": "string",
+                        "enum": [
+                            "full",
+                            "simple"
+                        ]
+                    },
                     "application_name": {
                         "description": "Display name of the related application",
                         "type": "string",
@@ -5372,6 +5412,13 @@
                                 },
                                 "name": {
                                     "type": "string"
+                                },
+                                "ui_mode": {
+                                    "type": "string",
+                                    "enum": [
+                                        "full",
+                                        "simple"
+                                    ]
                                 }
                             },
                             "type": "object"

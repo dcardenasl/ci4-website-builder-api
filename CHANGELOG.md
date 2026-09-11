@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Role presentation mode** — added the `roles.ui_mode` contract (`full`/`simple`) to role
+  persistence, authenticated-user responses, DTO validation and generated OpenAPI documentation;
+  the mode is presentation-only and never grants permissions.
 - **Permission-aware admin dashboard summary** — bounded users, files and request-stat sections are returned only when the authenticated actor has the matching read permission.
 - **Bounded admin user list projection** — an explicit `projection=list` path paginates users and preloads roles in one bounded query while preserving the full response as the default.
 - **Locale-aware Google pending-approval email** — the Google login endpoint accepts an optional locale and queues the subject/template in the caller's supported language.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\DTO\Response\Auth;
 
 use App\DTO\Response\Users\UserResponseDTO;
+use App\Enums\UiMode;
 use dcardenasl\Ci4ApiCore\Dto\DataTransferObjectInterface;
 use OpenApi\Attributes as OA;
 
@@ -30,7 +31,7 @@ use OpenApi\Attributes as OA;
 readonly class MeResponseDTO implements DataTransferObjectInterface
 {
     /**
-     * @param list<array{id:int, code:string, name:string}> $roles
+     * @param list<array{id:int, code:string, name:string, ui_mode:string}> $roles
      * @param list<string>                                  $permissions
      */
     public function __construct(
@@ -59,10 +60,13 @@ readonly class MeResponseDTO implements DataTransferObjectInterface
                     new OA\Property(property: 'id', type: 'integer'),
                     new OA\Property(property: 'code', type: 'string'),
                     new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'ui_mode', type: 'string', enum: ['full', 'simple']),
                 ]
             )
         )]
         public array $roles,
+        #[OA\Property(description: 'Effective presentation mode. Full wins over simple and it never grants permissions.', type: 'string', enum: ['full', 'simple'])]
+        public string $ui_mode,
         #[OA\Property(
             description: 'Effective permission codes for the current application. Drives UI gating on the frontend.',
             type: 'array',
@@ -90,6 +94,7 @@ readonly class MeResponseDTO implements DataTransferObjectInterface
             created_at: $user->created_at,
             updated_at: $user->updated_at,
             roles: $user->roles,
+            ui_mode: UiMode::effective(array_map(static fn (mixed $role): mixed => is_array($role) ? ($role['ui_mode'] ?? null) : null, $user->roles))->value,
             permissions: array_values($permissions),
         );
     }
@@ -136,6 +141,7 @@ readonly class MeResponseDTO implements DataTransferObjectInterface
             'created_at'   => $this->created_at,
             'updated_at'   => $this->updated_at,
             'roles'        => $this->roles,
+            'ui_mode'      => $this->ui_mode,
             'permissions'  => $this->permissions,
         ];
     }
